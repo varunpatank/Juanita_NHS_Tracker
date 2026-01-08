@@ -2,20 +2,17 @@ import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Plus, 
   MapPin, 
   Calendar, 
   Clock,
   Users, 
   School,
   ExternalLink,
-  Filter,
-  X
+  Filter
 } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { supabase, VolunteerOpportunity } from '../lib/supabase';
-import { AddOpportunityModal } from '../components/AddOpportunityModal';
 
 // Fix Leaflet default markers
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -27,7 +24,6 @@ L.Icon.Default.mergeOptions({
 
 export function VolunteeringPage() {
   const [opportunities, setOpportunities] = useState<VolunteerOpportunity[]>([]);
-  const [showAddForm, setShowAddForm] = useState(false);
   const [selectedOpportunity, setSelectedOpportunity] = useState<VolunteerOpportunity | null>(null);
   const [filterChapterSponsored, setFilterChapterSponsored] = useState<boolean | null>(null);
   const [filterImpact, setFilterImpact] = useState<string | null>(null);
@@ -39,6 +35,14 @@ export function VolunteeringPage() {
 
   const fetchOpportunities = async () => {
     try {
+      if (!supabase) {
+        // Use mock data when Supabase is not configured
+        console.log('Supabase not configured - using mock data');
+        setOpportunities([]);
+        setLoading(false);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('volunteer_opportunities')
         .select('*')
@@ -49,6 +53,7 @@ export function VolunteeringPage() {
       setOpportunities(data || []);
     } catch (error) {
       console.error('Error fetching opportunities:', error);
+      setOpportunities([]);
     } finally {
       setLoading(false);
     }
@@ -129,18 +134,10 @@ export function VolunteeringPage() {
             <h1 className="text-3xl lg:text-4xl font-bold mb-4">
               Service Opportunities
             </h1>
-            <p className="text-xl text-blue-100 max-w-2xl mx-auto mb-8">
+            <p className="text-xl text-blue-100 max-w-2xl mx-auto">
               Discover meaningful ways to serve your community and make a lasting impact. 
               Every act of service strengthens the bonds that unite us all.
             </p>
-            
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="bg-white text-blue-900 px-8 py-4 rounded-xl font-bold shadow-xl hover:shadow-2xl transform hover:-translate-y-2 hover:scale-105 transition-all duration-300 flex items-center space-x-3 mx-auto"
-            >
-              <Plus className="w-6 h-6" />
-              <span>Share New Opportunity</span>
-            </button>
           </motion.div>
         </div>
       </div>
@@ -359,13 +356,6 @@ export function VolunteeringPage() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Add Opportunity Modal */}
-      <AddOpportunityModal
-        isOpen={showAddForm}
-        onClose={() => setShowAddForm(false)}
-        onSuccess={fetchOpportunities}
-      />
     </div>
   );
 }

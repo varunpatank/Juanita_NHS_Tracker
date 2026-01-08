@@ -36,6 +36,12 @@ export function AddOpportunityModal({ isOpen, onClose, onSuccess }: AddOpportuni
     setError(null);
 
     try {
+      if (!supabase) {
+        setError('Database not configured. Cannot add opportunities.');
+        setIsSubmitting(false);
+        return;
+      }
+
       // Check for inappropriate content
       const contentToCheck = `${formData.title} ${formData.description} ${formData.organizer}`;
       const isAppropriate = await checkContentAppropriate(contentToCheck);

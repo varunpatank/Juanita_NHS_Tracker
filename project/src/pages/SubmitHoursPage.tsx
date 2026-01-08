@@ -1,629 +1,559 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, FileText, CheckCircle, AlertCircle, Eye, X, ArrowRight, Shield } from 'lucide-react';
-import { useDropzone } from 'react-dropzone';
-import { verifyVolunteerActivity } from '../lib/gemini';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Send, CheckCircle, AlertCircle, Trophy, ArrowRight, Clock, Users, Award, BookOpen, UserPlus, ChevronDown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useDarkMode } from '../lib/darkModeContext';
-
-type GradeLevel = 'freshman' | 'sophomore' | 'junior' | 'senior' | null;
+import { submitHours, isWriteEnabled, fetchMembers, type HoursSubmission, type MemberHours } from '../lib/googleSheets';
 
 export function SubmitHoursPage() {
-  const [selectedGrade, setSelectedGrade] = useState<GradeLevel>(null);
-  const [fullDescription, setFullDescription] = useState('');
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const { darkMode } = useDarkMode();
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [verificationResult, setVerificationResult] = useState<'pending' | 'success' | 'failed' | null>(null);
-  const [verificationMessage, setVerificationMessage] = useState('');
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const [existingMembers, setExistingMembers] = useState<MemberHours[]>([]);
+  const [isNewMember, setIsNewMember] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<string>('');
+  const [formData, setFormData] = useState({
+    name: '',
+    grade: '',
+    summerHours: '',
+    chapterHours: '',
+    inducted: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const gradeOptions = [
-    { 
-      id: 'freshman', 
-      label: 'Freshman (9th Grade)', 
-      color: 'from-green-700 to-green-600',
-      accent: 'border-green-700 bg-green-50'
+  const writeEnabled = isWriteEnabled();
+
+  // Load existing members on mount
+  useEffect(() => {
+    loadExistingMembers();
+  }, []);
+
+  const loadExistingMembers = async () => {
+    setIsLoadingMembers(true);
+    try {
+      const members = await fetchMembers();
+      setExistingMembers(members);
+    } catch (error) {
+      console.error('Error loading members:', error);
+    } finally {
+      setIsLoadingMembers(false);
+    }
+  };
+
+  // When selecting an existing member, prefill their data
+  const handleMemberSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const memberName = e.target.value;
+    setSelectedMember(memberName);
+    
+    if (memberName) {
+      const member = existingMembers.find(m => m.name === memberName);
+      if (member) {
+        setFormData({
+          name: member.name,
+          grade: member.grade,
+          summerHours: '', // Don't prefill hours - they're adding new hours
+          chapterHours: '',
+          inducted: member.inducted ? 'Yes' : 'No'
+        });
+      }
+    } else {
+      setFormData({
+        name: '',
+        grade: '',
+        summerHours: '',
+        chapterHours: '',
+        inducted: ''
+      });
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.name || !formData.grade || !formData.inducted) {
+      setErrorMessage('Please fill in all required fields');
+      setSubmitStatus('error');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+    setErrorMessage('');
+
+    try {
+      const submission: HoursSubmission = {
+        name: formData.name,
+        grade: formData.grade,
+        summerHours: parseFloat(formData.summerHours) || 0,
+        chapterHours: parseFloat(formData.chapterHours) || 0,
+        inducted: formData.inducted
+      };
+
+      await submitHours(submission);
+      
+      setSubmitStatus('success');
+      setFormData({
+        name: '',
+        grade: '',
+        summerHours: '',
+        chapterHours: '',
+        inducted: ''
+      });
+    } catch (error) {
+      console.error('Error submitting:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to submit hours');
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const totalHours = (parseFloat(formData.summerHours) || 0) + (parseFloat(formData.chapterHours) || 0);
+
+  const rules = [
+    {
+      icon: Clock,
+      title: '20 Hours Required',
+      description: 'Complete 20 total service hours per school year to maintain membership.',
+      color: 'text-blue-500'
     },
-    { 
-      id: 'sophomore', 
-      label: 'Sophomore (10th Grade)', 
-      color: 'from-blue-900 to-blue-700',
-      accent: 'border-blue-900 bg-blue-50'
+    {
+      icon: Users,
+      title: '10 Summer + 10 Chapter',
+      description: 'Split between 10 summer hours and 10 chapter hours during the school year.',
+      color: 'text-purple-500'
     },
-    { 
-      id: 'junior', 
-      label: 'Junior (11th Grade)', 
-      color: 'from-yellow-600 to-yellow-500',
-      accent: 'border-yellow-600 bg-yellow-50'
+    {
+      icon: Award,
+      title: 'Verification Required',
+      description: 'All hours must be verified by an NHS officer before appearing on the leaderboard.',
+      color: 'text-amber-500'
     },
-    { 
-      id: 'senior', 
-      label: 'Senior (12th Grade)', 
-      color: 'from-red-600 to-red-500',
-      accent: 'border-red-600 bg-red-50'
+    {
+      icon: BookOpen,
+      title: 'Approved Activities',
+      description: 'Hours must be from NHS-approved volunteer activities at school or in the community.',
+      color: 'text-emerald-500'
     }
   ];
 
-  const formUrls = {
-    freshman: 'https://forms.office.com/Pages/ResponsePage.aspx?Host=Teams&lang=%7Blocale%7D&groupId=%7BgroupId%7D&tid=%7Btid%7D&teamsTheme=%7Btheme%7D&upn=%7Bupn%7D&id=P2fUH5bfIUaGOKHYjEyF14sTooyFFCFPiNJ3GunxR8pUOExHMVJaQkpWVjdOUVZaNFhLWUFCQkdEVC4u',
-    sophomore: 'https://forms.office.com/Pages/ResponsePage.aspx?Host=Teams&lang={locale}&groupId={groupId}&tid={tid}&teamsTheme={theme}&upn={upn}&id=P2fUH5bfIUaGOKHYjEyF14sTooyFFCFPiNJ3GunxR8pURTZZODdaQkRYQkdHTUxENFJXM0U4SDhZVC4u',
-    junior: 'https://forms.office.com/Pages/ResponsePage.aspx?Host=Teams&lang={locale}&groupId={groupId}&tid={tid}&teamsTheme={theme}&upn={upn}&id=P2fUH5bfIUaGOKHYjEyF14sTooyFFCFPiNJ3GunxR8pUOEU5S04yUEVRT1MzRDEzSkpDQjlKQjdHRC4u',
-    senior: 'https://forms.office.com/Pages/ResponsePage.aspx?Host=Teams&lang={locale}&groupId={groupId}&tid={tid}&teamsTheme={theme}&upn={upn}&id=P2fUH5bfIUaGOKHYjEyF14sTooyFFCFPiNJ3GunxR8pUOEtNN0dITE5JUlU1Q1dBRFIyUENRNUtZNi4u'
-  };
-
-  const onDrop = (acceptedFiles: File[]) => {
-    setUploadedFiles(prev => [...prev, ...acceptedFiles]);
-    
-    // Create preview for the first image
-    if (acceptedFiles.length > 0 && acceptedFiles[0].type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreviewImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(acceptedFiles[0]);
-    }
-  };
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.gif'],
-      'application/pdf': ['.pdf']
-    },
-    maxSize: 10 * 1024 * 1024 // 10MB
-  });
-
-  const handleVerification = async () => {
-    if (!fullDescription.trim() || uploadedFiles.length === 0) return;
-
-    setIsVerifying(true);
-    setVerificationResult('pending');
-
-    try {
-      const result = await verifyVolunteerActivity(fullDescription, uploadedFiles[0]);
-      setVerificationResult(result.isValid ? 'success' : 'failed');
-      setVerificationMessage(result.reason || '');
-    } catch (error) {
-      setVerificationResult('failed');
-      setVerificationMessage('Unable to verify your submission. Please ensure your image clearly shows the service activity you describe and try again.');
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const removeFile = (index: number) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
-    if (index === 0) {
-      setPreviewImage(null);
-      // Set preview for next image if available
-      if (uploadedFiles.length > 1 && uploadedFiles[1].type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setPreviewImage(e.target?.result as string);
-        };
-        reader.readAsDataURL(uploadedFiles[1]);
-      }
-    }
-  };
-
-  const showImagePreview = (file: File) => {
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreviewImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSecureFormAccess = (url: string) => {
-    // Create a data URL with the redirect page
-    const redirectPage = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>NHS Service Hours Submission</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 40px;
-            background: linear-gradient(135deg, #1e3a8a, #dc2626);
-            color: white;
-            text-align: center;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-          }
-          .container {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 40px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            max-width: 500px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-          }
-          .logo {
-            width: 80px;
-            height: 80px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 16px;
-            margin: 0 auto 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-          }
-          .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-          }
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-          h1 { 
-            margin: 0 0 10px; 
-            font-size: 28px; 
-            font-weight: 700;
-          }
-          p { 
-            margin: 10px 0; 
-            opacity: 0.9; 
-            line-height: 1.5;
-          }
-          .security-note {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 20px;
-            font-size: 14px;
-            opacity: 0.8;
-          }
-          .progress-bar {
-            width: 100%;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 2px;
-            margin: 20px 0;
-            overflow: hidden;
-          }
-          .progress-fill {
-            height: 100%;
-            background: white;
-            border-radius: 2px;
-            animation: progress 3s ease-in-out;
-          }
-          @keyframes progress {
-            0% { width: 0%; }
-            100% { width: 100%; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="logo">🏫</div>
-          <h1>NHS Service Hours</h1>
-          <p>Connecting to secure submission portal...</p>
-          <div class="spinner"></div>
-          <div class="progress-bar">
-            <div class="progress-fill"></div>
-          </div>
-          <p style="font-size: 16px; font-weight: 600;">Redirecting to Microsoft Forms</p>
-          <div class="security-note">
-            <p style="margin: 0; font-size: 13px;">
-              🔒 This is a secure connection to your official NHS service hours submission form.
-            </p>
-          </div>
-        </div>
-        <script>
-          // Redirect after 3 seconds
-          setTimeout(() => {
-            window.location.replace('${url}');
-          }, 3000);
-          
-          // Fallback redirect on click
-          document.addEventListener('click', () => {
-            window.location.replace('${url}');
-          });
-        </script>
-      </body>
-      </html>
-    `;
-
-    // Create blob URL for the redirect page
-    const blob = new Blob([redirectPage], { type: 'text/html' });
-    const blobUrl = URL.createObjectURL(blob);
-    
-    // Open the redirect page
-    const newWindow = window.open(
-      blobUrl,
-      '_blank',
-      'width=1200,height=800,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no,directories=no'
-    );
-    
-    if (!newWindow) {
-      // Fallback if popup blocked - direct redirect
-      window.open(url, '_blank');
-    } else {
-      // Clean up blob URL after window opens
-      setTimeout(() => {
-        URL.revokeObjectURL(blobUrl);
-      }, 5000);
-    }
-  };
-
   return (
-    <div className={`min-h-screen py-8 px-4 sm:px-6 lg:px-8 transition-colors duration-200 ${
-        darkMode 
-          ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
-          : 'bg-gradient-to-br from-blue-50 via-white to-red-50'
-      }`}>
-      <div className="max-w-4xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-12"
-        >
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-900 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
-            <img 
-              src="https://upload.wikimedia.org/wikipedia/en/5/52/Juanita_High_School_Crest.png"
-              alt="Juanita High School"
-              className="w-12 h-12 object-contain"
-            />
-          </div>
-          <h1 className="text-3xl lg:text-4xl font-bold text-gray-800 mb-4">
-            Submit Your Service Hours
-          </h1>
-          <p className={`text-xl max-w-2xl mx-auto transition-colors duration-200 ${
-            darkMode ? 'text-gray-300' : 'text-gray-600'
-          }`}>
-            Document your community impact and contribute to our collective mission. 
-            Your service matters and every hour counts towards positive change.
-          </p>
-        </motion.div>
-
-        {/* Grade Selection */}
+    <div className={`min-h-screen py-12 px-4 sm:px-6 lg:px-8 ${
+      darkMode 
+        ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950' 
+        : 'bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100'
+    }`}>
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className={`backdrop-blur-sm p-8 rounded-2xl shadow-xl mb-8 border-4 border-blue-900 transition-colors duration-200 ${
-            darkMode ? 'bg-gray-800/90' : 'bg-white/90'
-          }`}
+          transition={{ duration: 0.4 }}
+          className="text-center mb-12"
         >
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-            <span className="w-10 h-10 bg-gradient-to-br from-blue-900 to-red-600 rounded-xl flex items-center justify-center mr-3 text-white font-bold text-sm shadow-lg">1</span>
-            Choose Your Academic Year
-          </h2>
-          
-          <div className="grid md:grid-cols-2 gap-6">
-            {gradeOptions.map((option) => (
-              <motion.button
-                key={option.id}
-                onClick={() => setSelectedGrade(option.id as GradeLevel)}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`p-6 border-4 rounded-2xl transition-all duration-300 text-left ${
-                  selectedGrade === option.id
-                    ? `${option.accent} border-current shadow-xl transform -translate-y-1`
-                    : 'border-gray-200 hover:border-blue-900 hover:bg-blue-50/50 shadow-lg hover:shadow-xl'
-                }`}
-              >
-                <div className={`w-16 h-16 bg-gradient-to-br ${option.color} rounded-2xl flex items-center justify-center mb-4 shadow-lg`}>
-                  <span className="text-white font-bold text-xl">
-                    {option.id === 'freshman' ? '9' : option.id === 'sophomore' ? '10' : option.id === 'junior' ? '11' : '12'}
-                  </span>
-                </div>
-                <h3 className={`font-bold text-lg transition-colors duration-200 ${
-                  darkMode ? 'text-gray-100' : 'text-gray-800'
-                }`}>{option.label}</h3>
-                <p className={`text-sm mt-2 transition-colors duration-200 ${
-                  darkMode ? 'text-gray-400' : 'text-gray-600'
-                }`}>
-                  Access your grade-specific submission portal
-                </p>
-              </motion.button>
-            ))}
-          </div>
+          <h1 className={`text-4xl lg:text-5xl font-bold mb-4 ${
+            darkMode ? 'text-white' : 'text-gray-900'
+          }`}>
+            Submit Service Hours
+          </h1>
+          <p className={`text-lg max-w-2xl mx-auto ${
+            darkMode ? 'text-gray-400' : 'text-gray-600'
+          }`}>
+            Log your volunteer hours and track your progress toward NHS requirements
+          </p>
         </motion.div>
 
-        {/* Service Documentation */}
-        <AnimatePresence>
-          {selectedGrade && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.6 }}
-              className={`backdrop-blur-sm p-8 rounded-2xl shadow-xl mb-8 border-4 border-blue-900 transition-colors duration-200 ${
-                darkMode ? 'bg-gray-800/90' : 'bg-white/90'
-              }`}
-            >
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <span className="w-10 h-10 bg-gradient-to-br from-blue-900 to-red-600 rounded-xl flex items-center justify-center mr-3 text-white font-bold text-sm shadow-lg">2</span>
-                Document Your Service
+        {/* Main Content - Two Column Layout */}
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+          {/* Left Side - Form */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+          >
+            <div className={`rounded-3xl border p-8 ${
+              darkMode 
+                ? 'bg-gray-900/80 border-gray-800' 
+                : 'bg-white border-gray-200 shadow-xl'
+            }`}>
+              <h2 className={`text-2xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                Hours Submission Form
               </h2>
 
-              {/* File Upload */}
-              <div className="mb-8">
-                <label className={`block text-sm font-medium mb-4 transition-colors duration-200 ${
-                  darkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Upload Evidence (Photos, Ensure it Matches Activity)
-                </label>
-                <div
-                  {...getRootProps()}
-                  className={`border-4 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 ${
-                    isDragActive
-                      ? 'border-blue-900 bg-blue-50 dark:bg-blue-900/20'
-                      : darkMode 
-                        ? 'border-gray-600 hover:border-blue-900 hover:bg-blue-900/20' 
-                        : 'border-gray-300 hover:border-blue-900 hover:bg-blue-50/50'
+              {/* Success Message */}
+              {submitStatus === 'success' && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`mb-6 p-4 rounded-xl flex items-start gap-3 ${
+                    darkMode 
+                      ? 'bg-emerald-900/30 border border-emerald-500/30' 
+                      : 'bg-emerald-50 border border-emerald-200'
                   }`}
                 >
-                  <input {...getInputProps()} />
-                  <Upload className={`w-16 h-16 mx-auto mb-4 transition-colors duration-200 ${
-                    darkMode ? 'text-gray-500' : 'text-gray-400'
-                  }`} />
-                  {isDragActive ? (
-                    <p className={`font-medium text-lg transition-colors duration-200 ${
-                      darkMode ? 'text-blue-400' : 'text-blue-900'
-                    }`}>Drop your files here...</p>
-                  ) : (
-                    <div>
-                      <p className={`font-medium mb-2 text-lg transition-colors duration-200 ${
-                        darkMode ? 'text-gray-300' : 'text-gray-600'
-                      }`}>
-                        Drag & drop files here, or click to browse
-                      </p>
-                      <p className={`text-sm transition-colors duration-200 ${
-                        darkMode ? 'text-gray-400' : 'text-gray-500'
-                      }`}>
-                        Supports: JPG, PNG, PDF (Max 10MB each)
-                      </p>
-                    </div>
-                  )}
+                  <CheckCircle className={`w-5 h-5 mt-0.5 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                  <div>
+                    <p className={`font-semibold ${darkMode ? 'text-emerald-400' : 'text-emerald-800'}`}>
+                      Hours Submitted Successfully!
+                    </p>
+                    <button
+                      onClick={() => navigate('/hours-tracker')}
+                      className={`mt-2 inline-flex items-center gap-1 text-sm font-medium ${
+                        darkMode ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-700 hover:text-emerald-800'
+                      }`}
+                    >
+                      View Leaderboard <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Error Message */}
+              {submitStatus === 'error' && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`mb-6 p-4 rounded-xl flex items-start gap-3 ${
+                    darkMode 
+                      ? 'bg-red-900/30 border border-red-500/30' 
+                      : 'bg-red-50 border border-red-200'
+                  }`}
+                >
+                  <AlertCircle className={`w-5 h-5 mt-0.5 ${darkMode ? 'text-red-400' : 'text-red-600'}`} />
+                  <p className={`font-medium ${darkMode ? 'text-red-400' : 'text-red-800'}`}>
+                    {errorMessage}
+                  </p>
+                </motion.div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Member Selection Toggle */}
+                <div className="flex gap-2 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsNewMember(false);
+                      setSelectedMember('');
+                      setFormData({ name: '', grade: '', summerHours: '', chapterHours: '', inducted: '' });
+                    }}
+                    className={`flex-1 py-2.5 px-4 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${
+                      !isNewMember
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : darkMode
+                        ? 'bg-gray-800 text-gray-400 hover:text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                    Select Existing
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsNewMember(true);
+                      setSelectedMember('');
+                      setFormData({ name: '', grade: '', summerHours: '', chapterHours: '', inducted: '' });
+                    }}
+                    className={`flex-1 py-2.5 px-4 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${
+                      isNewMember
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : darkMode
+                        ? 'bg-gray-800 text-gray-400 hover:text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    New Member
+                  </button>
                 </div>
 
-                {/* Uploaded Files */}
-                {uploadedFiles.length > 0 && (
-                  <div className="mt-6 space-y-3">
-                    {uploadedFiles.map((file, index) => (
-                      <motion.div 
-                        key={index} 
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className={`flex items-center justify-between p-4 rounded-xl border transition-colors duration-200 ${
-                          darkMode 
-                            ? 'bg-blue-900/20 border-blue-700' 
-                            : 'bg-blue-50 border-blue-900'
-                        }`}
-                      >
-                        <div className="flex items-center">
-                          <FileText className="w-6 h-6 text-blue-900 mr-3" />
-                          <span className="text-sm text-gray-700 font-medium">{file.name}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          {file.type.startsWith('image/') && (
-                            <button
-                              onClick={() => showImagePreview(file)}
-                              className="text-blue-900 hover:text-blue-700 text-sm font-medium px-3 py-1 rounded-lg hover:bg-blue-100 transition-colors flex items-center"
-                            >
-                              <Eye className="w-4 h-4 mr-1" />
-                              Preview
-                            </button>
-                          )}
-                          <button
-                            onClick={() => removeFile(index)}
-                            className="text-red-600 hover:text-red-700 text-sm font-medium px-3 py-1 rounded-lg hover:bg-red-50 transition-colors"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </motion.div>
-                    ))}
+                {/* Existing Member Dropdown OR New Name Input */}
+                {!isNewMember ? (
+                  <div>
+                    <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Select Your Name <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={selectedMember}
+                      onChange={handleMemberSelect}
+                      required
+                      disabled={isLoadingMembers}
+                      className={`w-full px-4 py-3 rounded-xl border transition-all ${
+                        darkMode 
+                          ? 'bg-gray-800 border-gray-700 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
+                          : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                      } ${isLoadingMembers ? 'opacity-50 cursor-wait' : ''}`}
+                    >
+                      <option value="">{isLoadingMembers ? 'Loading members...' : 'Select your name'}</option>
+                      {existingMembers.map((member) => (
+                        <option key={member.id} value={member.name}>
+                          {member.name} ({member.grade})
+                        </option>
+                      ))}
+                    </select>
+                    {existingMembers.length === 0 && !isLoadingMembers && (
+                      <p className={`text-sm mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                        No members yet. Click "New Member" to add yourself.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      required
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="Enter your full name"
+                      className={`w-full px-4 py-3 rounded-xl border transition-all ${
+                        darkMode 
+                          ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
+                          : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                      }`}
+                    />
                   </div>
                 )}
 
-                {/* Image Preview */}
-                {previewImage && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`mt-6 border-4 rounded-2xl p-6 transition-colors duration-200 ${
+                {/* Grade */}
+                <div>
+                  <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Grade Level <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="grade"
+                    required
+                    value={formData.grade}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 rounded-xl border transition-all ${
                       darkMode 
-                        ? 'bg-gray-800 border-gray-600' 
-                        : 'bg-gray-50 border-gray-300'
+                        ? 'bg-gray-800 border-gray-700 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
+                        : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
                     }`}
                   >
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className={`text-lg font-bold transition-colors duration-200 ${
-                        darkMode ? 'text-gray-100' : 'text-gray-800'
-                      }`}>Image Preview</h3>
-                      <button
-                        onClick={() => setPreviewImage(null)}
-                        className={`p-2 rounded-xl transition-colors ${
-                          darkMode
-                            ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-700'
-                            : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
+                    <option value="">Select your grade</option>
+                    <option value="Sophomore">Sophomore (10th)</option>
+                    <option value="Junior">Junior (11th)</option>
+                    <option value="Senior">Senior (12th)</option>
+                  </select>
+                </div>
+
+                {/* Hours Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Summer Hours
+                    </label>
+                    <input
+                      type="number"
+                      name="summerHours"
+                      min="0"
+                      step="0.5"
+                      value={formData.summerHours}
+                      onChange={handleChange}
+                      placeholder="0"
+                      className={`w-full px-4 py-3 rounded-xl border transition-all ${
+                        darkMode 
+                          ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
+                          : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Chapter Hours
+                    </label>
+                    <input
+                      type="number"
+                      name="chapterHours"
+                      min="0"
+                      step="0.5"
+                      value={formData.chapterHours}
+                      onChange={handleChange}
+                      placeholder="0"
+                      className={`w-full px-4 py-3 rounded-xl border transition-all ${
+                        darkMode 
+                          ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
+                          : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {/* Total Display */}
+                {totalHours > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className={`p-4 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}
+                  >
+                    <div className="flex justify-between items-center mb-2">
+                      <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Total Hours
+                      </span>
+                      <span className={`text-2xl font-bold ${
+                        totalHours >= 20 ? 'text-emerald-500' : darkMode ? 'text-white' : 'text-gray-900'
+                      }`}>
+                        {totalHours.toFixed(1)}
+                      </span>
                     </div>
-                    <div className="flex justify-center">
-                      <img
-                        src={previewImage}
-                        alt="Evidence preview"
-                        className="max-w-full max-h-96 object-contain rounded-xl shadow-lg border-4 border-white"
+                    <div className={`h-2 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                      <div 
+                        className={`h-full rounded-full transition-all ${totalHours >= 20 ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                        style={{ width: `${Math.min((totalHours / 20) * 100, 100)}%` }}
                       />
                     </div>
+                    <p className={`text-xs mt-2 text-center ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                      {totalHours >= 20 ? '✓ Goal reached!' : `${(20 - totalHours).toFixed(1)} more hours needed`}
+                    </p>
                   </motion.div>
                 )}
-              </div>
 
-              {/* Combined Description */}
-              <div className="mb-8">
-                <label className={`block text-sm font-medium mb-4 transition-colors duration-200 ${
-                  darkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Describe your service activity and how your image evidence supports it
-                </label>
-                <textarea
-                  value={fullDescription}
-                  onChange={(e) => setFullDescription(e.target.value)}
-                  rows={8}
-                  className={`w-full p-4 border-4 rounded-xl focus:ring-2 focus:ring-blue-900 focus:border-transparent resize-none transition-colors duration-200 ${
-                    darkMode 
-                      ? 'bg-gray-800 border-gray-600 text-gray-200' 
-                      : 'bg-white border-gray-300 text-gray-700'
-                  }`}
-                  placeholder="Example: I volunteered at the Kirkland Food Bank on Saturday morning, helping to sort and package food donations for families in need. In my photo, you can see me wearing the volunteer apron while organizing canned goods on the sorting tables in the food bank warehouse. The image shows the food bank's organized donation area and demonstrates my hands-on involvement in the food distribution process."
-                />
-              </div>
-
-              {/* Verification Button */}
-              <button
-                onClick={handleVerification}
-                disabled={!fullDescription.trim() || uploadedFiles.length === 0 || isVerifying}
-                className="w-full bg-gradient-to-r from-blue-900 to-red-600 text-white py-4 rounded-xl font-semibold shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:hover:shadow-xl text-lg"
-              >
-                {isVerifying ? 'Verifying...' : 'Verify'}
-              </button>
-
-              {/* Verification Status */}
-              <AnimatePresence>
-                {verificationResult && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className={`mt-6 p-6 rounded-xl border-4 ${
-                      verificationResult === 'success'
-                        ? 'bg-green-50 text-green-700 border-green-700'
-                        : verificationResult === 'failed'
-                        ? 'bg-red-50 text-red-700 border-red-600'
-                        : 'bg-blue-50 text-blue-700 border-blue-900'
+                {/* Inducted Status */}
+                <div>
+                  <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Induction Status <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="inducted"
+                    required
+                    value={formData.inducted}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 rounded-xl border transition-all ${
+                      darkMode 
+                        ? 'bg-gray-800 border-gray-700 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
+                        : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
                     }`}
                   >
-                    <div className="flex items-start">
-                      {verificationResult === 'success' ? (
-                        <CheckCircle className="w-6 h-6 mr-3 flex-shrink-0 mt-0.5" />
-                      ) : verificationResult === 'failed' ? (
-                        <AlertCircle className="w-6 h-6 mr-3 flex-shrink-0 mt-0.5" />
-                      ) : (
-                        <div className="w-6 h-6 mr-3 flex-shrink-0 mt-0.5 border-2 border-blue-900 border-t-transparent rounded-full animate-spin" />
-                      )}
-                      <div className="flex-1">
-                        <span className="font-semibold block mb-2 text-lg">
-                          {verificationResult === 'success'
-                            ? 'Verification Successful!'
-                            : verificationResult === 'failed'
-                            ? 'Verification Failed'
-                            : 'Verifying your activity...'}
-                        </span>
-                        <div className="text-sm leading-relaxed whitespace-pre-line">
-                          {verificationMessage}
-                        </div>
+                    <option value="">Select status</option>
+                    <option value="Yes">Yes - Inducted member</option>
+                    <option value="No">No - Pending induction</option>
+                  </select>
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !writeEnabled}
+                  className={`w-full py-4 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all ${
+                    isSubmitting || !writeEnabled
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl active:scale-[0.98]'
+                  }`}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-5 h-5" />
+                      Submit Hours
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* View Leaderboard Link */}
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
+                <button
+                  onClick={() => navigate('/hours-tracker')}
+                  className={`inline-flex items-center gap-2 font-medium transition-colors ${
+                    darkMode 
+                      ? 'text-gray-400 hover:text-white' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Trophy className="w-5 h-5" />
+                  View Leaderboard
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Right Side - Rules */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="space-y-6"
+          >
+            <div className={`rounded-3xl border p-8 ${
+              darkMode 
+                ? 'bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700' 
+                : 'bg-gradient-to-br from-white to-blue-50 border-gray-200 shadow-xl'
+            }`}>
+              <h2 className={`text-2xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                Submission Guidelines
+              </h2>
+              
+              <div className="space-y-5">
+                {rules.map((rule, index) => (
+                  <motion.div
+                    key={rule.title}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 + index * 0.1 }}
+                    className={`p-4 rounded-xl ${darkMode ? 'bg-gray-800/50' : 'bg-white shadow-sm border border-gray-100'}`}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                        <rule.icon className={`w-5 h-5 ${rule.color}`} />
+                      </div>
+                      <div>
+                        <h3 className={`font-semibold mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {rule.title}
+                        </h3>
+                        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {rule.description}
+                        </p>
                       </div>
                     </div>
                   </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Secure Form Access */}
-        <AnimatePresence>
-          {selectedGrade && verificationResult === 'success' && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.6 }}
-              className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border-4 border-green-700 overflow-hidden"
-            >
-              <div className="bg-gradient-to-r from-green-700 to-green-600 text-white p-8">
-                <h2 className="text-2xl font-bold mb-4 flex items-center">
-                  <span className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mr-3 shadow-lg">
-                    <CheckCircle className="w-6 h-6 text-green-700" />
-                  </span>
-                  Complete Your Submission
-                </h2>
-                
-                <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 mb-6">
-                  <div className="flex items-center mb-4">
-                    <CheckCircle className="w-8 h-8 text-white mr-3" />
-                    <h3 className="font-bold text-white text-lg">Activity Successfully Verified!</h3>
-                  </div>
-                  <p className="text-green-100">
-                    Your volunteer activity has been authenticated. Click below to access the secure submission form.
-                  </p>
-                </div>
-
-                <h3 className="text-xl font-bold mb-2">
-                  {gradeOptions.find(g => g.id === selectedGrade)?.label} Submission Form
-                </h3>
-                <p className="text-green-100 mb-6">
-                  Access your grade-specific Microsoft Teams form to officially record your service hours.
-                </p>
+                ))}
               </div>
+            </div>
 
-              {/* Secure Form Access */}
-              <div className="p-8 bg-white">
-                <div className="bg-gradient-to-br from-blue-50 to-green-50 border-4 border-green-700 rounded-2xl p-8 text-center">
-                  <div className="w-20 h-20 bg-gradient-to-br from-green-700 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
-                    <Shield className="w-10 h-10 text-white" />
-                  </div>
-                  
-                  <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                    Ready to Submit Your Hours
-                  </h3>
-                  
-                  <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                    Your verification is complete! Click the button below to open your secure submission form.
-                  </p>
-
-                  <div className="space-y-4">
-                    <button
-                      onClick={() => handleSecureFormAccess(formUrls[selectedGrade])}
-                      className="w-full bg-gradient-to-r from-green-700 to-green-600 text-white py-4 px-8 rounded-xl font-bold shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center text-lg"
-                    >
-                      <Shield className="w-6 h-6 mr-3" />
-                      Open Secure Submission Form
-                      <ArrowRight className="w-6 h-6 ml-3" />
-                    </button>
-                    
-                    <div className="bg-blue-50 border-4 border-blue-900 rounded-xl p-4">
-                      <div className="flex items-start">
-                        <Shield className="w-5 h-5 text-blue-900 mr-3 flex-shrink-0 mt-0.5" />
-                        <div className="text-sm text-blue-800">
-                          <p className="font-semibold mb-1">Secure Access:</p>
-                          <p>The form will open through a secure loading page that protects your privacy. Please allow popups if prompted.</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+            {/* Quick Stats */}
+            <div className={`rounded-3xl border p-6 ${
+              darkMode 
+                ? 'bg-gray-900/80 border-gray-800' 
+                : 'bg-white border-gray-200 shadow-lg'
+            }`}>
+              <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                Hours Breakdown
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className={`p-4 rounded-xl text-center ${darkMode ? 'bg-blue-900/30' : 'bg-blue-50'}`}>
+                  <p className={`text-3xl font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>10</p>
+                  <p className={`text-sm ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>Summer Hours</p>
+                </div>
+                <div className={`p-4 rounded-xl text-center ${darkMode ? 'bg-purple-900/30' : 'bg-purple-50'}`}>
+                  <p className={`text-3xl font-bold ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>10</p>
+                  <p className={`text-sm ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>Chapter Hours</p>
                 </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <div className={`mt-4 p-4 rounded-xl text-center ${darkMode ? 'bg-emerald-900/30' : 'bg-emerald-50'}`}>
+                <p className={`text-4xl font-bold ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>20</p>
+                <p className={`text-sm ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>Total Required</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );

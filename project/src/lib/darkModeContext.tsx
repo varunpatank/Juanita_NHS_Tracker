@@ -10,7 +10,8 @@ const DarkModeContext = createContext<DarkModeContextType | undefined>(undefined
 export function DarkModeProvider({ children }: { children: React.ReactNode }) {
   const [darkMode, setDarkMode] = useState(() => {
     const savedMode = localStorage.getItem('darkMode');
-    return savedMode ? JSON.parse(savedMode) : false;
+    // Default to true (dark mode) if not set
+    return savedMode !== null ? JSON.parse(savedMode) : true;
   });
 
   useEffect(() => {
