@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="#1e40af" stroke="#1e3a8a" stroke-width="3"/>
+  
+  <!-- Torch flame (gold) -->
+  <path d="M100 30 L110 50 L105 55 L100 45 L95 55 L90 50 Z" fill="#fbbf24"/>
+  
+  <!-- Torch handle -->
+  <rect x="95" y="50" width="10" height="60" fill="#f3f4f6" rx="2"/>
+  
+  <!-- NHS Letters -->
+  <text x="100" y="140" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="white" text-anchor="middle">NHS</text>
+  
+  <!-- Star accents -->
+  <path d="M50 70 L52 76 L58 76 L53 80 L55 86 L50 82 L45 86 L47 80 L42 76 L48 76 Z" fill="#fbbf24"/>
+  <path d="M150 70 L152 76 L158 76 L153 80 L155 86 L150 82 L145 86 L147 80 L142 76 L148 76 Z" fill="#fbbf24"/>
+  
+  <!-- Bottom laurel -->
+  <path d="M60 160 Q100 170 140 160" stroke="#fbbf24" stroke-width="3" fill="none"/>
+  <path d="M65 158 L60 160 L65 162" fill="#fbbf24"/>
+  <path d="M135 158 L140 160 L135 162" fill="#fbbf24"/>
+</svg>

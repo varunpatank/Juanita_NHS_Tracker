@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Send, CheckCircle, AlertCircle, Trophy, ArrowRight, Clock, Users, Award, BookOpen, UserPlus, ChevronDown } from 'lucide-react';
+import { Send, CheckCircle, AlertCircle, Trophy, ArrowRight, Clock, Users, Award, BookOpen, UserPlus, ChevronDown, Upload, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDarkMode } from '../lib/darkModeContext';
 import { submitHours, isWriteEnabled, fetchMembers, type HoursSubmission, type MemberHours } from '../lib/googleSheets';
+import { verifyImage, validateImageFile, type ImageVerificationResult } from '../lib/imageVerification';
 
 export function SubmitHoursPage() {
   const { darkMode } = useDarkMode();
@@ -22,6 +23,15 @@ export function SubmitHoursPage() {
   const [isLoadingMembers, setIsLoadingMembers] = useState(true);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  
+  // Image verification states
+  const [proofImage, setProofImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [activityDescription, setActivityDescription] = useState('');
+  const [adminCode, setAdminCode] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<ImageVerificationResult | null>(null);
+  const [isVerified, setIsVerified] = useState(false);
 
   const writeEnabled = isWriteEnabled();
 
@@ -76,8 +86,95 @@ export function SubmitHoursPage() {
     }));
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setErrorMessage(validation.error || 'Invalid image file');
+      setSubmitStatus('error');
+      return;
+    }
+
+    // Set image and create preview
+    setProofImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Reset verification when new image is uploaded
+    setIsVerified(false);
+    setVerificationResult(null);
+    setSubmitStatus('idle');
+  };
+
+  const handleVerifyImage = async () => {
+    // Check for admin bypass code
+    if (adminCode === '1060801') {
+      setIsVerified(true);
+      setSubmitStatus('success');
+      setErrorMessage('');
+      setVerificationResult({ isValid: true });
+      return;
+    }
+
+    if (!proofImage) {
+      setErrorMessage('Please upload an image first');
+      setSubmitStatus('error');
+      return;
+    }
+
+    if (!activityDescription.trim()) {
+      setErrorMessage('Please describe your volunteer activity and how this image supports it');
+      setSubmitStatus('error');
+      return;
+    }
+
+    if (activityDescription.trim().length < 30) {
+      setErrorMessage('Please provide a more detailed activity description (at least 30 characters)');
+      setSubmitStatus('error');
+      return;
+    }
+
+    setIsVerifying(true);
+    setSubmitStatus('idle');
+    setErrorMessage('');
+
+    try {
+      const result = await verifyImage(proofImage, activityDescription);
+      setVerificationResult(result);
+
+      if (!result.isValid) {
+        setErrorMessage(result.error || 'Image verification failed');
+        setSubmitStatus('error');
+        setIsVerified(false);
+      } else {
+        setIsVerified(true);
+        setSubmitStatus('success');
+        setErrorMessage('');
+      }
+    } catch (error) {
+      console.error('Verification error:', error);
+      setErrorMessage('Failed to verify image. Please try again.');
+      setSubmitStatus('error');
+      setIsVerified(false);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isVerified) {
+      setErrorMessage('Please verify your proof of volunteering image before submitting');
+      setSubmitStatus('error');
+      return;
+    }
     
     if (!formData.name || !formData.grade || !formData.inducted) {
       setErrorMessage('Please fill in all required fields');
@@ -108,6 +205,13 @@ export function SubmitHoursPage() {
         chapterHours: '',
         inducted: ''
       });
+      // Reset image verification
+      setProofImage(null);
+      setImagePreview(null);
+      setActivityDescription('');
+      setAdminCode('');
+      setIsVerified(false);
+      setVerificationResult(null);
     } catch (error) {
       console.error('Error submitting:', error);
       setErrorMessage(error instanceof Error ? error.message : 'Failed to submit hours');
@@ -122,27 +226,33 @@ export function SubmitHoursPage() {
   const rules = [
     {
       icon: Clock,
-      title: '20 Hours Required',
-      description: 'Complete 20 total service hours per school year to maintain membership.',
+      title: '30 Total Hours Required',
+      description: 'Complete 30 volunteer hours throughout the year. 10 of these must be completed by the end of 1st semester.',
       color: 'text-blue-500'
     },
     {
       icon: Users,
-      title: '10 Summer + 10 Chapter',
-      description: 'Split between 10 summer hours and 10 chapter hours during the school year.',
+      title: '6 Chapter-Sponsored Hours',
+      description: '6 of the 30 hours must be chapter sponsored (supporting students and/or staff of Lake Washington School District), completed any time throughout the year.',
       color: 'text-purple-500'
     },
     {
-      icon: Award,
-      title: 'Verification Required',
-      description: 'All hours must be verified by an NHS officer before appearing on the leaderboard.',
+      icon: BookOpen,
+      title: 'Summer Hours Limit',
+      description: 'Only 8 of the 30 hours may be completed during the summer previous to the start of the school year (not required).',
       color: 'text-amber-500'
     },
     {
-      icon: BookOpen,
-      title: 'Approved Activities',
-      description: 'Hours must be from NHS-approved volunteer activities at school or in the community.',
+      icon: Award,
+      title: '3.5 GPA & Meetings',
+      description: 'Achieve and maintain a GPA of 3.5 or higher. Attend two mandatory meetings (one in fall, one in spring).',
       color: 'text-emerald-500'
+    },
+    {
+      icon: UserPlus,
+      title: 'Induction Eligibility',
+      description: 'Sophomores, Juniors, and Seniors who meet all requirements can apply for induction. Freshmen are not eligible for induction until they have an official high school GPA.',
+      color: 'text-rose-500'
     }
   ];
 
@@ -404,19 +514,19 @@ export function SubmitHoursPage() {
                         Total Hours
                       </span>
                       <span className={`text-2xl font-bold ${
-                        totalHours >= 20 ? 'text-emerald-500' : darkMode ? 'text-white' : 'text-gray-900'
+                        totalHours >= 30 ? 'text-emerald-500' : darkMode ? 'text-white' : 'text-gray-900'
                       }`}>
                         {totalHours.toFixed(1)}
                       </span>
                     </div>
                     <div className={`h-2 rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
                       <div 
-                        className={`h-full rounded-full transition-all ${totalHours >= 20 ? 'bg-emerald-500' : 'bg-blue-500'}`}
-                        style={{ width: `${Math.min((totalHours / 20) * 100, 100)}%` }}
+                        className={`h-full rounded-full transition-all ${totalHours >= 30 ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                        style={{ width: `${Math.min((totalHours / 30) * 100, 100)}%` }}
                       />
                     </div>
                     <p className={`text-xs mt-2 text-center ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                      {totalHours >= 20 ? '✓ Goal reached!' : `${(20 - totalHours).toFixed(1)} more hours needed`}
+                      {totalHours >= 30 ? '✓ Goal reached!' : `${(30 - totalHours).toFixed(1)} more hours needed`}
                     </p>
                   </motion.div>
                 )}
@@ -443,12 +553,225 @@ export function SubmitHoursPage() {
                   </select>
                 </div>
 
+                {/* Image Proof Upload */}
+                <div className={`p-6 rounded-xl border-2 border-dashed ${
+                  darkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-300 bg-gray-50'
+                }`}>
+                  <label className={`block text-sm font-semibold mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Proof of Volunteering <span className="text-red-500">*</span>
+                  </label>
+                  
+                  {/* File Upload */}
+                  {!imagePreview ? (
+                    <label className={`flex flex-col items-center justify-center cursor-pointer py-8 px-4 rounded-lg transition-all ${
+                      darkMode 
+                        ? 'hover:bg-gray-700/50 border border-gray-700' 
+                        : 'hover:bg-gray-100 border border-gray-200'
+                    }`}>
+                      <Upload className={`w-12 h-12 mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                      <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        Upload an image as proof
+                      </p>
+                      <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                        JPG, PNG, or WebP (Max 5MB)
+                      </p>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Image Preview */}
+                      <div className="relative">
+                        <img
+                          src={imagePreview}
+                          alt="Proof of volunteering"
+                          className="w-full h-48 object-cover rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setProofImage(null);
+                            setImagePreview(null);
+                            setIsVerified(false);
+                            setVerificationResult(null);
+                            setActivityDescription('');
+                            setAdminCode('');
+                          }}
+                          className={`absolute top-2 right-2 p-2 rounded-lg ${
+                            darkMode ? 'bg-gray-900/80 text-white hover:bg-gray-900' : 'bg-white/80 text-gray-900 hover:bg-white'
+                          }`}
+                        >
+                          <AlertCircle className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      {/* Verification Result Display (after verification is attempted) */}
+                      {verificationResult && !isVerified && verificationResult.geminiReasoning && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className={`p-4 rounded-xl flex items-start gap-3 ${
+                            darkMode 
+                              ? 'bg-red-900/30 border border-red-500/30' 
+                              : 'bg-red-50 border border-red-200'
+                          }`}
+                        >
+                          <AlertCircle className={`w-5 h-5 mt-0.5 flex-shrink-0 ${darkMode ? 'text-red-400' : 'text-red-600'}`} />
+                          <div>
+                            <p className={`font-semibold ${darkMode ? 'text-red-400' : 'text-red-800'}`}>
+                              Verification Failed
+                            </p>
+                            <p className={`text-sm mt-1 ${darkMode ? 'text-red-300' : 'text-red-700'}`}>
+                              {verificationResult.geminiReasoning}
+                            </p>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {isVerified && verificationResult?.isValid && verificationResult.geminiReasoning && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className={`p-4 rounded-xl flex items-start gap-3 ${
+                            darkMode 
+                              ? 'bg-blue-900/30 border border-blue-500/30' 
+                              : 'bg-blue-50 border border-blue-200'
+                          }`}
+                        >
+                          <CheckCircle className={`w-5 h-5 mt-0.5 flex-shrink-0 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                          <div>
+                            <p className={`font-semibold ${darkMode ? 'text-blue-400' : 'text-blue-800'}`}>
+                              AI Analysis
+                            </p>
+                            <p className={`text-sm mt-1 ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                              {verificationResult.geminiReasoning}
+                            </p>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Activity Description */}
+                      <div>
+                        <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          Activity & How Image Supports It <span className="text-red-500">*</span>
+                        </label>
+                        <textarea
+                          value={activityDescription}
+                          onChange={(e) => setActivityDescription(e.target.value)}
+                          placeholder="Example: I volunteered at the Kirkland Food Bank on October 15th sorting donations. This photo shows me wearing the volunteer badge with the food bank logo visible in the background."
+                          rows={4}
+                          className={`w-full px-4 py-3 rounded-xl border transition-all resize-none ${
+                            darkMode 
+                              ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
+                              : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                          }`}
+                        />
+                        <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          Minimum 30 characters. Describe your activity and how this image proves it (e.g., shows you at location, has signatures, organization branding, etc.).
+                        </p>
+                      </div>
+
+                      {/* Admin Code (Optional) */}
+                      <div>
+                        <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          Admin Override Code (Optional)
+                        </label>
+                        <input
+                          type="password"
+                          value={adminCode}
+                          onChange={(e) => setAdminCode(e.target.value)}
+                          placeholder="Enter admin code to bypass verification"
+                          className={`w-full px-4 py-3 rounded-xl border transition-all ${
+                            darkMode 
+                              ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
+                              : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                          }`}
+                        />
+                        <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          NHS officers only. Leave blank if you're a regular member.
+                        </p>
+                      </div>
+
+                      {/* Verify Button */}
+                      {!isVerified && (
+                        <button
+                          type="button"
+                          onClick={handleVerifyImage}
+                          disabled={isVerifying}
+                          className={`w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${
+                            isVerifying
+                              ? 'bg-gray-400 text-white cursor-not-allowed'
+                              : darkMode
+                              ? 'bg-blue-600 text-white hover:bg-blue-700'
+                              : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
+                          }`}
+                        >
+                          {isVerifying ? (
+                            <>
+                              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              Verifying Image...
+                            </>
+                          ) : (
+                            <>
+                              <Shield className="w-5 h-5" />
+                              Verify Proof
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      {/* Verification Success Banner */}
+                      {isVerified && verificationResult?.isValid && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className={`p-4 rounded-xl flex items-center justify-center gap-3 ${
+                            darkMode 
+                              ? 'bg-emerald-900/30 border border-emerald-500/30' 
+                              : 'bg-emerald-50 border border-emerald-200'
+                          }`}
+                        >
+                          <CheckCircle className={`w-5 h-5 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                          <p className={`font-semibold ${darkMode ? 'text-emerald-400' : 'text-emerald-800'}`}>
+                            ✓ Verified - Ready for Submission
+                          </p>
+                        </motion.div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Warning Message */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className={`p-4 rounded-xl flex items-start gap-3 ${
+                    darkMode 
+                      ? 'bg-amber-900/30 border border-amber-500/30' 
+                      : 'bg-amber-50 border border-amber-200'
+                  }`}
+                >
+                  <AlertCircle className={`w-5 h-5 mt-0.5 flex-shrink-0 ${darkMode ? 'text-amber-400' : 'text-amber-600'}`} />
+                  <div>
+                    <p className={`font-semibold ${darkMode ? 'text-amber-400' : 'text-amber-800'}`}>
+                      Important Notice
+                    </p>
+                    <p className={`text-sm mt-1 ${darkMode ? 'text-amber-300' : 'text-amber-700'}`}>
+                      Do not lie about your activities or attempt to misrepresent your hours. All submissions are carefully reviewed and verified by our team. Dishonest submissions will result in consequences.
+                    </p>
+                  </div>
+                </motion.div>
+
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={isSubmitting || !writeEnabled}
+                  disabled={isSubmitting || !writeEnabled || !isVerified}
                   className={`w-full py-4 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all ${
-                    isSubmitting || !writeEnabled
+                    isSubmitting || !writeEnabled || !isVerified
                       ? 'bg-gray-400 cursor-not-allowed' 
                       : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl active:scale-[0.98]'
                   }`}
@@ -457,6 +780,11 @@ export function SubmitHoursPage() {
                     <>
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       Submitting...
+                    </>
+                  ) : !isVerified ? (
+                    <>
+                      <Shield className="w-5 h-5" />
+                      Verify Proof First
                     </>
                   ) : (
                     <>
@@ -539,16 +867,16 @@ export function SubmitHoursPage() {
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className={`p-4 rounded-xl text-center ${darkMode ? 'bg-blue-900/30' : 'bg-blue-50'}`}>
-                  <p className={`text-3xl font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>10</p>
-                  <p className={`text-sm ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>Summer Hours</p>
+                  <p className={`text-3xl font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>8</p>
+                  <p className={`text-sm ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>Max Summer Hours</p>
                 </div>
                 <div className={`p-4 rounded-xl text-center ${darkMode ? 'bg-purple-900/30' : 'bg-purple-50'}`}>
-                  <p className={`text-3xl font-bold ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>10</p>
+                  <p className={`text-3xl font-bold ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>6</p>
                   <p className={`text-sm ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>Chapter Hours</p>
                 </div>
               </div>
               <div className={`mt-4 p-4 rounded-xl text-center ${darkMode ? 'bg-emerald-900/30' : 'bg-emerald-50'}`}>
-                <p className={`text-4xl font-bold ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>20</p>
+                <p className={`text-4xl font-bold ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>30</p>
                 <p className={`text-sm ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>Total Required</p>
               </div>
             </div>
