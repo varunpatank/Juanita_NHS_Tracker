@@ -546,6 +546,18 @@ export function SubmitHoursPage() {
       return;
     }
     
+    // For new members, check if name already exists (prevent duplicates)
+    if (isNewMember && formData.name) {
+      const nameExists = existingMembers.some(
+        member => member.name.toLowerCase().trim() === formData.name.toLowerCase().trim()
+      );
+      if (nameExists) {
+        setErrorMessage('This name already exists in the system. Please click "Existing Member" and search for your name instead.');
+        setSubmitStatus('error');
+        return;
+      }
+    }
+    
     if (!formData.name || !formData.grade || !formData.inducted) {
       setErrorMessage('Please fill in all required fields');
       setSubmitStatus('error');
