@@ -785,24 +785,6 @@ export function SubmitHoursPage() {
                 </motion.div>
               )}
 
-              {/* Error Message */}
-              {submitStatus === 'error' && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`mb-6 p-4 rounded-xl flex items-start gap-3 ${
-                    darkMode 
-                      ? 'bg-red-900/30 border border-red-500/30' 
-                      : 'bg-red-50 border border-red-200'
-                  }`}
-                >
-                  <AlertCircle className={`w-5 h-5 mt-0.5 ${darkMode ? 'text-red-400' : 'text-red-600'}`} />
-                  <p className={`font-medium ${darkMode ? 'text-red-400' : 'text-red-800'}`}>
-                    {errorMessage}
-                  </p>
-                </motion.div>
-              )}
-
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Member Selection Toggle */}
                 <div className="flex gap-2 mb-2">
@@ -1427,6 +1409,27 @@ export function SubmitHoursPage() {
                     </p>
                   </div>
                 </motion.div>
+
+                {/* Error Message - at bottom where user sees it */}
+                <AnimatePresence>
+                  {submitStatus === 'error' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className={`p-4 rounded-xl flex items-start gap-3 ${
+                        darkMode 
+                          ? 'bg-red-900/30 border border-red-500/30' 
+                          : 'bg-red-50 border border-red-200'
+                      }`}
+                    >
+                      <AlertCircle className={`w-5 h-5 mt-0.5 flex-shrink-0 ${darkMode ? 'text-red-400' : 'text-red-600'}`} />
+                      <p className={`font-medium ${darkMode ? 'text-red-400' : 'text-red-800'}`}>
+                        {errorMessage}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Submit Button */}
                 <button
