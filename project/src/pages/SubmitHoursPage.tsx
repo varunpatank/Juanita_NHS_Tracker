@@ -362,9 +362,9 @@ export function SubmitHoursPage() {
     }
   };
 
-  // Filter members based on search query
+  // Filter members based on search query - EXACT MATCH ONLY
   const filteredMembers = existingMembers.filter(member =>
-    member.name.toLowerCase().includes(nameSearchQuery.toLowerCase())
+    member.name.toLowerCase() === nameSearchQuery.toLowerCase().trim()
   );
 
   // When selecting an existing member from suggestions, prefill their data
