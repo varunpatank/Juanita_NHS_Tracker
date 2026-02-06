@@ -313,6 +313,7 @@ export function SubmitHoursPage() {
   const { darkMode } = useDarkMode();
   const navigate = useNavigate();
   const [existingMembers, setExistingMembers] = useState<MemberHours[]>([]);
+  const [hasMadeChoice, setHasMadeChoice] = useState(false);
   const [isNewMember, setIsNewMember] = useState(false);
   const [selectedMember, setSelectedMember] = useState<string>('');
   const [nameSearchQuery, setNameSearchQuery] = useState('');
@@ -648,6 +649,7 @@ export function SubmitHoursPage() {
       setSelectedMember('');
       setNameSearchQuery('');
       setHasSearched(false);
+      setHasMadeChoice(false);
     } catch (error) {
       console.error('Error submitting:', error);
       setErrorMessage(error instanceof Error ? error.message : 'Failed to submit hours');
@@ -786,49 +788,132 @@ export function SubmitHoursPage() {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Member Selection Toggle */}
-                <div className="flex gap-2 mb-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsNewMember(false);
-                      setSelectedMember('');
-                      setNameSearchQuery('');
-                      setHasSearched(false);
-                      setFormData({ name: '', grade: '', summerHours: '', chapterHours: '', otherHours: '', inducted: '' });
-                    }}
-                    className={`flex-1 py-2.5 px-4 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${
-                      !isNewMember
-                        ? 'bg-blue-600 text-white shadow-lg'
-                        : darkMode
-                        ? 'bg-gray-800 text-gray-400 hover:text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                {/* Initial Question - Have you submitted before? */}
+                {!hasMadeChoice ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-4"
                   >
-                    <Users className="w-4 h-4" />
-                    Find My Name
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsNewMember(true);
-                      setSelectedMember('');
-                      setNameSearchQuery('');
-                      setHasSearched(false);
-                      setFormData({ name: '', grade: '', summerHours: '', chapterHours: '', otherHours: '', inducted: '' });
-                    }}
-                    className={`flex-1 py-2.5 px-4 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${
-                      isNewMember
-                        ? 'bg-blue-600 text-white shadow-lg'
-                        : darkMode
-                        ? 'bg-gray-800 text-gray-400 hover:text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    New Member
-                  </button>
-                </div>
+                    <div className="text-center mb-6">
+                      <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                        Have you submitted hours before?
+                      </h3>
+                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        This helps us find your existing record or create a new one
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setHasMadeChoice(true);
+                          setIsNewMember(false);
+                          setSelectedMember('');
+                          setNameSearchQuery('');
+                          setHasSearched(false);
+                          setFormData({ name: '', grade: '', summerHours: '', chapterHours: '', otherHours: '', inducted: '' });
+                        }}
+                        className={`p-5 rounded-xl border-2 transition-all text-left hover:scale-[1.02] ${
+                          darkMode 
+                            ? 'bg-gray-800 border-gray-700 hover:border-blue-500 hover:bg-gray-750' 
+                            : 'bg-white border-gray-200 hover:border-blue-500 hover:bg-blue-50'
+                        }`}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className={`p-3 rounded-xl ${darkMode ? 'bg-blue-900/50' : 'bg-blue-100'}`}>
+                            <Users className={`w-6 h-6 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className={`font-bold text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                              Yes, I've submitted hours before
+                            </h4>
+                            <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                              I'm already on the leaderboard and want to add more hours
+                            </p>
+                          </div>
+                          <ArrowRight className={`w-5 h-5 mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                        </div>
+                      </button>
+                      
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setHasMadeChoice(true);
+                          setIsNewMember(true);
+                          setSelectedMember('');
+                          setNameSearchQuery('');
+                          setHasSearched(false);
+                          setFormData({ name: '', grade: '', summerHours: '', chapterHours: '', otherHours: '', inducted: '' });
+                        }}
+                        className={`p-5 rounded-xl border-2 transition-all text-left hover:scale-[1.02] ${
+                          darkMode 
+                            ? 'bg-gray-800 border-gray-700 hover:border-green-500 hover:bg-gray-750' 
+                            : 'bg-white border-gray-200 hover:border-green-500 hover:bg-green-50'
+                        }`}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className={`p-3 rounded-xl ${darkMode ? 'bg-green-900/50' : 'bg-green-100'}`}>
+                            <UserPlus className={`w-6 h-6 ${darkMode ? 'text-green-400' : 'text-green-600'}`} />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className={`font-bold text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                              No, this is my first time
+                            </h4>
+                            <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                              I'm new and haven't submitted any hours yet
+                            </p>
+                          </div>
+                          <ArrowRight className={`w-5 h-5 mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                        </div>
+                      </button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <>
+                    {/* Back button to change choice */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHasMadeChoice(false);
+                        setSelectedMember('');
+                        setNameSearchQuery('');
+                        setHasSearched(false);
+                        setFormData({ name: '', grade: '', summerHours: '', chapterHours: '', otherHours: '', inducted: '' });
+                        setIsVerified(false);
+                        setVerificationResult(null);
+                        setProofImage(null);
+                        setImagePreview(null);
+                        setActivityDescription('');
+                      }}
+                      className={`mb-4 text-sm flex items-center gap-1 transition-colors ${
+                        darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'
+                      }`}
+                    >
+                      <ArrowRight className="w-4 h-4 rotate-180" />
+                      {isNewMember ? 'Actually, I\'ve submitted before' : 'Actually, I\'m new here'}
+                    </button>
+                    
+                    {/* Header showing current mode */}
+                    <div className={`p-3 rounded-xl mb-2 flex items-center gap-3 ${
+                      isNewMember 
+                        ? darkMode ? 'bg-green-900/30 border border-green-500/30' : 'bg-green-50 border border-green-200'
+                        : darkMode ? 'bg-blue-900/30 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'
+                    }`}>
+                      {isNewMember ? (
+                        <UserPlus className={`w-5 h-5 ${darkMode ? 'text-green-400' : 'text-green-600'}`} />
+                      ) : (
+                        <Users className={`w-5 h-5 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                      )}
+                      <span className={`text-sm font-medium ${
+                        isNewMember 
+                          ? darkMode ? 'text-green-400' : 'text-green-700'
+                          : darkMode ? 'text-blue-400' : 'text-blue-700'
+                      }`}>
+                        {isNewMember ? 'Creating new member profile' : 'Finding your existing record'}
+                      </span>
+                    </div>
 
                 {/* Existing Member Autocomplete OR New Name Input */}
                 {!isNewMember ? (
@@ -926,7 +1011,7 @@ export function SubmitHoursPage() {
                             }`}>
                               <p className="font-medium">❌ No matching members found</p>
                               <p className="text-sm mt-1">Make sure you typed your name exactly as registered (check spelling!).</p>
-                              <p className="text-sm mt-2">If you're new, click <strong>"New Member"</strong> above.</p>
+                              <p className="text-sm mt-2">If this is your first time, go back and select <strong>"No, this is my first time"</strong>.</p>
                             </div>
                           )}
                         </motion.div>
@@ -947,7 +1032,7 @@ export function SubmitHoursPage() {
                     
                     {existingMembers.length === 0 && !isLoadingMembers && (
                       <p className={`text-sm mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                        No members yet. Click "New Member" to add yourself.
+                        No members found. Go back and select "No, this is my first time" to create your profile.
                       </p>
                     )}
                   </div>
@@ -1458,6 +1543,8 @@ export function SubmitHoursPage() {
                     </>
                   )}
                 </button>
+                  </>
+                )}
               </form>
 
               {/* View Leaderboard Link */}
