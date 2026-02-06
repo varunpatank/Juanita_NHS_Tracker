@@ -82,7 +82,7 @@ export function HoursTrackerPage() {
     <div className={`min-h-screen py-8 px-4 sm:px-6 lg:px-8 ${
       darkMode 
         ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950' 
-        : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'
+        : 'bg-gray-50'
     }`}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -117,7 +117,7 @@ export function HoursTrackerPage() {
           <div className={`p-6 rounded-2xl border ${
             darkMode 
               ? 'bg-gray-800/50 border-gray-700/50 backdrop-blur-sm' 
-              : 'bg-white border-gray-200'
+              : 'bg-white border-gray-200 shadow-sm'
           }`}>
             <div className="flex items-center justify-between mb-3">
               <Users className={`w-8 h-8 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
@@ -128,7 +128,7 @@ export function HoursTrackerPage() {
           <div className={`p-6 rounded-2xl border ${
             darkMode 
               ? 'bg-gray-800/50 border-gray-700/50 backdrop-blur-sm' 
-              : 'bg-white border-gray-200'
+              : 'bg-white border-gray-200 shadow-sm'
           }`}>
             <div className="flex items-center justify-between mb-3">
               <Award className={`w-8 h-8 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
@@ -139,7 +139,7 @@ export function HoursTrackerPage() {
           <div className={`p-6 rounded-2xl border ${
             darkMode 
               ? 'bg-gray-800/50 border-gray-700/50 backdrop-blur-sm' 
-              : 'bg-white border-gray-200'
+              : 'bg-white border-gray-200 shadow-sm'
           }`}>
             <div className="flex items-center justify-between mb-3">
               <Star className={`w-8 h-8 ${darkMode ? 'text-amber-400' : 'text-amber-600'}`} />
@@ -150,7 +150,7 @@ export function HoursTrackerPage() {
           <div className={`p-6 rounded-2xl border ${
             darkMode 
               ? 'bg-gray-800/50 border-gray-700/50 backdrop-blur-sm' 
-              : 'bg-white border-gray-200'
+              : 'bg-white border-gray-200 shadow-sm'
           }`}>
             <div className="flex items-center justify-between mb-3">
               <Trophy className={`w-8 h-8 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`} />
@@ -168,7 +168,7 @@ export function HoursTrackerPage() {
           className={`p-4 rounded-2xl mb-6 border ${
             darkMode 
               ? 'bg-gray-800/50 border-gray-700/50 backdrop-blur-sm' 
-              : 'bg-white border-blue-100 shadow-lg shadow-blue-500/5'
+              : 'bg-white border-gray-200 shadow-sm'
           }`}
         >
           <div className="flex flex-wrap gap-4 items-center">
@@ -182,10 +182,10 @@ export function HoursTrackerPage() {
                 placeholder="Search members..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 transition-all ${
+                className={`w-full pl-12 pr-4 py-3 rounded-xl border transition-all ${
                   darkMode 
                     ? 'bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500' 
-                    : 'bg-white border-blue-200 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-sm'
+                    : 'bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
                 }`}
               />
             </div>

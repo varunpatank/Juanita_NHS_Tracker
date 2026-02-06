@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, CheckCircle, AlertCircle, Trophy, ArrowRight, Clock, Users, Award, BookOpen, UserPlus, ChevronDown, Upload, Shield, Sparkles, PartyPopper } from 'lucide-react';
+import { Send, CheckCircle, AlertCircle, Trophy, ArrowRight, Clock, Users, Award, BookOpen, UserPlus, Upload, Shield, Sparkles, PartyPopper } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDarkMode } from '../lib/darkModeContext';
 import { submitHours, isWriteEnabled, fetchMembers, type HoursSubmission, type MemberHours } from '../lib/googleSheets';
@@ -315,6 +315,9 @@ export function SubmitHoursPage() {
   const [existingMembers, setExistingMembers] = useState<MemberHours[]>([]);
   const [isNewMember, setIsNewMember] = useState(false);
   const [selectedMember, setSelectedMember] = useState<string>('');
+  const [nameSearchQuery, setNameSearchQuery] = useState('');
+  const [showNameSuggestions, setShowNameSuggestions] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     grade: '',
@@ -359,10 +362,16 @@ export function SubmitHoursPage() {
     }
   };
 
-  // When selecting an existing member, prefill their data
-  const handleMemberSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const memberName = e.target.value;
+  // Filter members based on search query
+  const filteredMembers = existingMembers.filter(member =>
+    member.name.toLowerCase().includes(nameSearchQuery.toLowerCase())
+  );
+
+  // When selecting an existing member from suggestions, prefill their data
+  const handleMemberSelect = (memberName: string) => {
     setSelectedMember(memberName);
+    setNameSearchQuery(memberName);
+    setShowNameSuggestions(false);
     
     if (memberName) {
       const member = existingMembers.find(m => m.name === memberName);
@@ -385,6 +394,35 @@ export function SubmitHoursPage() {
         otherHours: '',
         inducted: ''
       });
+    }
+  };
+
+  // Handle name search input change
+  const handleNameSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNameSearchQuery(value);
+    // Reset search results when user types
+    setHasSearched(false);
+    setShowNameSuggestions(false);
+    // Clear selection if user modifies the input
+    if (selectedMember && value !== selectedMember) {
+      setSelectedMember('');
+      setFormData({
+        name: '',
+        grade: '',
+        summerHours: '',
+        chapterHours: '',
+        otherHours: '',
+        inducted: ''
+      });
+    }
+  };
+
+  // Handle Find button click
+  const handleFindName = () => {
+    if (nameSearchQuery.trim().length >= 2) {
+      setHasSearched(true);
+      setShowNameSuggestions(true);
     }
   };
 
@@ -501,6 +539,13 @@ export function SubmitHoursPage() {
       return;
     }
     
+    // For existing members, require selection from the list (prevents submitting others' hours)
+    if (!isNewMember && !selectedMember) {
+      setErrorMessage('Please select your name from the list. If you\'re a new member, click "New Member" above.');
+      setSubmitStatus('error');
+      return;
+    }
+    
     if (!formData.name || !formData.grade || !formData.inducted) {
       setErrorMessage('Please fill in all required fields');
       setSubmitStatus('error');
@@ -589,6 +634,8 @@ export function SubmitHoursPage() {
       setIsVerified(false);
       setVerificationResult(null);
       setSelectedMember('');
+      setNameSearchQuery('');
+      setHasSearched(false);
     } catch (error) {
       console.error('Error submitting:', error);
       setErrorMessage(error instanceof Error ? error.message : 'Failed to submit hours');
@@ -659,7 +706,7 @@ export function SubmitHoursPage() {
       <div className={`min-h-screen py-12 px-4 sm:px-6 lg:px-8 ${
         darkMode 
           ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950' 
-          : 'bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100'
+          : 'bg-gray-50'
       }`}>
         <div className="max-w-6xl mx-auto">
           {/* Header */}
@@ -692,7 +739,7 @@ export function SubmitHoursPage() {
               <div className={`rounded-3xl border p-8 ${
                 darkMode 
                   ? 'bg-gray-900/80 border-gray-800' 
-                  : 'bg-white border-gray-200 shadow-xl'
+                  : 'bg-white border-gray-200 shadow-sm'
               }`}>
                 <h2 className={`text-2xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                   Hours Submission Form
@@ -752,6 +799,8 @@ export function SubmitHoursPage() {
                     onClick={() => {
                       setIsNewMember(false);
                       setSelectedMember('');
+                      setNameSearchQuery('');
+                      setHasSearched(false);
                       setFormData({ name: '', grade: '', summerHours: '', chapterHours: '', otherHours: '', inducted: '' });
                     }}
                     className={`flex-1 py-2.5 px-4 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${
@@ -762,14 +811,16 @@ export function SubmitHoursPage() {
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
-                    <ChevronDown className="w-4 h-4" />
-                    Select Existing
+                    <Users className="w-4 h-4" />
+                    Find My Name
                   </button>
                   <button
                     type="button"
                     onClick={() => {
                       setIsNewMember(true);
                       setSelectedMember('');
+                      setNameSearchQuery('');
+                      setHasSearched(false);
                       setFormData({ name: '', grade: '', summerHours: '', chapterHours: '', otherHours: '', inducted: '' });
                     }}
                     className={`flex-1 py-2.5 px-4 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${
@@ -785,30 +836,121 @@ export function SubmitHoursPage() {
                   </button>
                 </div>
 
-                {/* Existing Member Dropdown OR New Name Input */}
+                {/* Existing Member Autocomplete OR New Name Input */}
                 {!isNewMember ? (
-                  <div>
+                  <div className="relative">
                     <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                      Select Your Name <span className="text-red-500">*</span>
+                      Find Your Name <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      value={selectedMember}
-                      onChange={handleMemberSelect}
-                      required
-                      disabled={isLoadingMembers}
-                      className={`w-full px-4 py-3 rounded-xl border transition-all ${
-                        darkMode 
-                          ? 'bg-gray-800 border-gray-700 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
-                          : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
-                      } ${isLoadingMembers ? 'opacity-50 cursor-wait' : ''}`}
-                    >
-                      <option value="">{isLoadingMembers ? 'Loading members...' : 'Select your name'}</option>
-                      {existingMembers.map((member) => (
-                        <option key={member.id} value={member.name}>
-                          {member.name} ({member.grade})
-                        </option>
-                      ))}
-                    </select>
+                    <p className={`text-xs mb-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                      Type your <strong>exact full name</strong> (no typos), then click <strong>Find</strong>. If you're already in the spreadsheet, your name will appear below — click it to select.
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={nameSearchQuery}
+                        onChange={handleNameSearchChange}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleFindName();
+                          }
+                        }}
+                        placeholder={isLoadingMembers ? 'Loading members...' : 'Enter your full name exactly...'}
+                        disabled={isLoadingMembers}
+                        className={`flex-1 px-4 py-3 rounded-xl border transition-all ${
+                          darkMode 
+                            ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
+                            : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                        } ${isLoadingMembers ? 'opacity-50 cursor-wait' : ''} ${
+                          selectedMember ? (darkMode ? 'border-green-500 bg-green-900/20' : 'border-green-500 bg-green-50') : ''
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleFindName}
+                        disabled={isLoadingMembers || nameSearchQuery.trim().length < 2}
+                        className={`px-5 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
+                          nameSearchQuery.trim().length >= 2
+                            ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
+                            : darkMode
+                            ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        }`}
+                      >
+                        <Users className="w-4 h-4" />
+                        Find
+                      </button>
+                    </div>
+                    {selectedMember && (
+                      <div className="absolute right-20 top-1/2 transform -translate-y-1/2 mt-5">
+                        <CheckCircle className="w-5 h-5 text-green-500" />
+                      </div>
+                    )}
+                    
+                    {/* Search Results - only show after clicking Find */}
+                    <AnimatePresence>
+                      {hasSearched && showNameSuggestions && !selectedMember && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className={`mt-3 rounded-xl border shadow-lg max-h-60 overflow-y-auto ${
+                            darkMode 
+                              ? 'bg-gray-800 border-gray-700' 
+                              : 'bg-white border-gray-200'
+                          }`}
+                        >
+                          {filteredMembers.length > 0 ? (
+                            <>
+                              <div className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider border-b ${
+                                darkMode ? 'text-gray-500 bg-gray-900/50 border-gray-700' : 'text-gray-400 bg-gray-50 border-gray-100'
+                              }`}>
+                                🎉 Found! Click your name below to select
+                              </div>
+                              {filteredMembers.map((member) => (
+                                <button
+                                  key={member.id}
+                                  type="button"
+                                  onClick={() => handleMemberSelect(member.name)}
+                                  className={`w-full px-4 py-3 text-left transition-colors flex justify-between items-center ${
+                                    darkMode 
+                                      ? 'hover:bg-blue-600/30 text-white border-b border-gray-700 last:border-0' 
+                                      : 'hover:bg-blue-100 text-gray-900 border-b border-gray-100 last:border-0'
+                                  }`}
+                                >
+                                  <span className="font-medium">{member.name}</span>
+                                  <span className={`text-sm px-2 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+                                    {member.grade}
+                                  </span>
+                                </button>
+                              ))}
+                            </>
+                          ) : (
+                            <div className={`px-4 py-4 text-center ${
+                              darkMode ? 'text-gray-400' : 'text-gray-500'
+                            }`}>
+                              <p className="font-medium">❌ No matching members found</p>
+                              <p className="text-sm mt-1">Make sure you typed your name exactly as registered (check spelling!).</p>
+                              <p className="text-sm mt-2">If you're new, click <strong>"New Member"</strong> above.</p>
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    
+                    {selectedMember && (
+                      <p className={`text-sm mt-2 text-green-500 flex items-center gap-1`}>
+                        <CheckCircle className="w-4 h-4" /> Selected: <strong>{selectedMember}</strong>
+                      </p>
+                    )}
+                    
+                    {!selectedMember && !hasSearched && nameSearchQuery.length >= 2 && (
+                      <p className={`text-sm mt-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                        👆 Click <strong>Find</strong> to search for your name
+                      </p>
+                    )}
+                    
                     {existingMembers.length === 0 && !isLoadingMembers && (
                       <p className={`text-sm mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                         No members yet. Click "New Member" to add yourself.

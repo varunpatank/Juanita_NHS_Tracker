@@ -58,7 +58,7 @@ export function HomePage() {
     <div className={`min-h-screen relative overflow-hidden ${
       darkMode 
         ? 'bg-gray-950' 
-        : 'bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100'
+        : 'bg-gray-50'
     }`}>
       {/* Hero Section */}
       <section className="relative py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
@@ -173,7 +173,7 @@ export function HomePage() {
       <section className={`py-16 border-y ${
         darkMode 
           ? 'bg-gray-900/50 border-gray-800' 
-          : 'bg-white shadow-sm border-gray-300'
+          : 'bg-white border-gray-200'
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
@@ -236,7 +236,7 @@ export function HomePage() {
                 className={`group p-8 rounded-2xl border transition-all duration-300 hover:scale-105 ${
                   darkMode 
                     ? 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600' 
-                    : 'bg-white border-gray-300 hover:border-blue-400 shadow-xl hover:shadow-2xl'
+                    : 'bg-white border-gray-200 hover:border-blue-300 shadow-sm hover:shadow-md'
                 }`}
               >
                 <div className={`w-16 h-16 bg-gradient-to-br ${pillar.color} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-all duration-300 shadow-lg ${pillar.glow}`}>

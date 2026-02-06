@@ -7,4 +7,12 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  server: {
+    // Handle client-side routing in dev mode
+    historyApiFallback: true,
+  },
+  preview: {
+    // Handle client-side routing in preview mode
+    historyApiFallback: true,
+  },
 });

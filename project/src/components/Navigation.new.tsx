@@ -29,15 +29,17 @@ export function Navigation() {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 border-b transition-all duration-300 ${
-      isScrolled
-        ? darkMode
-          ? 'bg-transparent backdrop-blur-sm border-transparent'
-          : 'bg-transparent backdrop-blur-sm border-transparent'
-        : darkMode 
-          ? 'bg-gradient-to-r from-blue-950/80 via-gray-950/90 to-red-950/80 backdrop-blur-xl border-gray-700/30' 
-          : 'bg-white/80 backdrop-blur-xl border-gray-200/30'
-    }`}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out`}
+    style={{
+      background: darkMode 
+        ? `linear-gradient(to right, rgba(30, 58, 138, 0.4), rgba(17, 24, 39, 0.5), rgba(127, 29, 29, 0.4))`
+        : `rgba(255, 255, 255, 0.85)`,
+      backdropFilter: 'blur(12px)',
+      WebkitBackdropFilter: 'blur(12px)',
+      borderBottom: darkMode 
+        ? '1px solid rgba(255, 255, 255, 0.1)'
+        : '1px solid rgba(0, 0, 0, 0.08)',
+    }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center gap-4">

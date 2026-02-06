@@ -7,6 +7,20 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Light mode - softer, less bright */
+:root {
+  --bg-primary: #f8f9fa;
+  --bg-secondary: #f1f3f5;
+  --bg-card: #ffffff;
+  --border-light: #e5e7eb;
+  --border-medium: #d1d5db;
+}
+
+/* Softer body background for light mode */
+body {
+  background-color: #f5f5f7;
+}
+
 /* Smoother animations globally */
 * {
   -webkit-font-smoothing: antialiased;
