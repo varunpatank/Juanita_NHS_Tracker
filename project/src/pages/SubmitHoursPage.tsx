@@ -755,10 +755,6 @@ export function SubmitHoursPage() {
                   ? 'bg-gray-900/80 border-gray-800' 
                   : 'bg-white border-gray-200 shadow-sm'
               }`}>
-                <h2 className={`text-2xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Hours Submission Form
-                </h2>
-
                 {/* Success Message */}
               {submitStatus === 'success' && (
                 <motion.div
@@ -793,18 +789,22 @@ export function SubmitHoursPage() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="space-y-4"
+                    className="py-8"
                   >
-                    <div className="text-center mb-6">
-                      <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                        Have you submitted hours before?
-                      </h3>
-                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        This helps us find your existing record or create a new one
+                    {/* Centered Title */}
+                    <div className="text-center mb-10">
+                      <h2 className={`text-3xl lg:text-4xl font-bold mb-3 ${
+                        darkMode ? 'text-white' : 'text-gray-900'
+                      }`}>
+                        Have You Submitted Hours Before?
+                      </h2>
+                      <p className={`text-base ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Select An Option To Continue
                       </p>
                     </div>
                     
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className="space-y-4">
+                      {/* Yes - Returning Member (Blue) */}
                       <button
                         type="button"
                         onClick={() => {
@@ -815,28 +815,33 @@ export function SubmitHoursPage() {
                           setHasSearched(false);
                           setFormData({ name: '', grade: '', summerHours: '', chapterHours: '', otherHours: '', inducted: '' });
                         }}
-                        className={`p-5 rounded-xl border-2 transition-all text-left hover:scale-[1.02] ${
+                        className={`w-full p-5 rounded-2xl border-2 transition-all duration-200 text-left group hover:scale-[1.01] ${
                           darkMode 
-                            ? 'bg-gray-800 border-gray-700 hover:border-blue-500 hover:bg-gray-750' 
-                            : 'bg-white border-gray-200 hover:border-blue-500 hover:bg-blue-50'
+                            ? 'bg-blue-950/50 border-blue-500/40 hover:border-blue-400 hover:bg-blue-900/50' 
+                            : 'bg-blue-50/80 border-blue-300 hover:border-blue-500 hover:bg-blue-100 hover:shadow-lg hover:shadow-blue-200/50'
                         }`}
                       >
-                        <div className="flex items-start gap-4">
-                          <div className={`p-3 rounded-xl ${darkMode ? 'bg-blue-900/50' : 'bg-blue-100'}`}>
-                            <Users className={`w-6 h-6 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/40">
+                            <CheckCircle className="w-7 h-7 text-white" />
                           </div>
-                          <div className="flex-1">
-                            <h4 className={`font-bold text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                              Yes, I've submitted hours before
+                          <div className="flex-1 min-w-0">
+                            <h4 className={`font-bold text-xl ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                              Yes, I've Submitted Before
                             </h4>
-                            <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                              I'm already on the leaderboard and want to add more hours
+                            <p className={`text-sm mt-1 ${darkMode ? 'text-blue-300' : 'text-blue-600'}`}>
+                              Find My Existing Record
                             </p>
                           </div>
-                          <ArrowRight className={`w-5 h-5 mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all group-hover:translate-x-1 ${
+                            darkMode ? 'bg-blue-500/30' : 'bg-blue-200'
+                          }`}>
+                            <ArrowRight className={`w-5 h-5 ${darkMode ? 'text-blue-300' : 'text-blue-600'}`} />
+                          </div>
                         </div>
                       </button>
                       
+                      {/* No - New Member (Red) */}
                       <button
                         type="button"
                         onClick={() => {
@@ -847,25 +852,29 @@ export function SubmitHoursPage() {
                           setHasSearched(false);
                           setFormData({ name: '', grade: '', summerHours: '', chapterHours: '', otherHours: '', inducted: '' });
                         }}
-                        className={`p-5 rounded-xl border-2 transition-all text-left hover:scale-[1.02] ${
+                        className={`w-full p-5 rounded-2xl border-2 transition-all duration-200 text-left group hover:scale-[1.01] ${
                           darkMode 
-                            ? 'bg-gray-800 border-gray-700 hover:border-green-500 hover:bg-gray-750' 
-                            : 'bg-white border-gray-200 hover:border-green-500 hover:bg-green-50'
+                            ? 'bg-red-950/50 border-red-500/40 hover:border-red-400 hover:bg-red-900/50' 
+                            : 'bg-red-50/80 border-red-300 hover:border-red-500 hover:bg-red-100 hover:shadow-lg hover:shadow-red-200/50'
                         }`}
                       >
-                        <div className="flex items-start gap-4">
-                          <div className={`p-3 rounded-xl ${darkMode ? 'bg-green-900/50' : 'bg-green-100'}`}>
-                            <UserPlus className={`w-6 h-6 ${darkMode ? 'text-green-400' : 'text-green-600'}`} />
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-red-500 to-red-600 shadow-lg shadow-red-500/40">
+                            <UserPlus className="w-7 h-7 text-white" />
                           </div>
-                          <div className="flex-1">
-                            <h4 className={`font-bold text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                              No, this is my first time
+                          <div className="flex-1 min-w-0">
+                            <h4 className={`font-bold text-xl ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                              No, This Is My First Time
                             </h4>
-                            <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                              I'm new and haven't submitted any hours yet
+                            <p className={`text-sm mt-1 ${darkMode ? 'text-red-300' : 'text-red-600'}`}>
+                              Create A New Profile
                             </p>
                           </div>
-                          <ArrowRight className={`w-5 h-5 mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all group-hover:translate-x-1 ${
+                            darkMode ? 'bg-red-500/30' : 'bg-red-200'
+                          }`}>
+                            <ArrowRight className={`w-5 h-5 ${darkMode ? 'text-red-300' : 'text-red-600'}`} />
+                          </div>
                         </div>
                       </button>
                     </div>
@@ -892,33 +901,33 @@ export function SubmitHoursPage() {
                       }`}
                     >
                       <ArrowRight className="w-4 h-4 rotate-180" />
-                      {isNewMember ? 'Actually, I\'ve submitted before' : 'Actually, I\'m new here'}
+                      {isNewMember ? 'Actually, I\'ve Submitted Before' : 'Actually, I\'m New Here'}
                     </button>
                     
                     {/* Header showing current mode */}
                     <div className={`p-3 rounded-xl mb-2 flex items-center gap-3 ${
                       isNewMember 
-                        ? darkMode ? 'bg-green-900/30 border border-green-500/30' : 'bg-green-50 border border-green-200'
+                        ? darkMode ? 'bg-red-900/30 border border-red-500/30' : 'bg-red-50 border border-red-200'
                         : darkMode ? 'bg-blue-900/30 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'
                     }`}>
                       {isNewMember ? (
-                        <UserPlus className={`w-5 h-5 ${darkMode ? 'text-green-400' : 'text-green-600'}`} />
+                        <UserPlus className={`w-5 h-5 ${darkMode ? 'text-red-400' : 'text-red-600'}`} />
                       ) : (
                         <Users className={`w-5 h-5 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
                       )}
-                      <span className={`text-sm font-medium ${
+                      <span className={`text-sm font-semibold ${
                         isNewMember 
-                          ? darkMode ? 'text-green-400' : 'text-green-700'
+                          ? darkMode ? 'text-red-400' : 'text-red-700'
                           : darkMode ? 'text-blue-400' : 'text-blue-700'
                       }`}>
-                        {isNewMember ? 'Creating new member profile' : 'Finding your existing record'}
+                        {isNewMember ? 'Creating New Member Profile' : 'Finding Your Existing Record'}
                       </span>
                     </div>
 
                 {/* Existing Member Autocomplete OR New Name Input */}
                 {!isNewMember ? (
                   <div className="relative">
-                    <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Find Your Name <span className="text-red-500">*</span>
                     </label>
                     <p className={`text-xs mb-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
@@ -1038,7 +1047,7 @@ export function SubmitHoursPage() {
                   </div>
                 ) : (
                   <div>
-                    <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Full Name <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -1059,7 +1068,7 @@ export function SubmitHoursPage() {
 
                 {/* Grade */}
                 <div>
-                  <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     Grade Level <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -1084,7 +1093,7 @@ export function SubmitHoursPage() {
                 {/* Hours Grid */}
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Summer Hours
                     </label>
                     <input
@@ -1104,7 +1113,7 @@ export function SubmitHoursPage() {
                     <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Max 8 count</p>
                   </div>
                   <div>
-                    <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Chapter Hours
                     </label>
                     <input
@@ -1124,7 +1133,7 @@ export function SubmitHoursPage() {
                     <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Min 6 required</p>
                   </div>
                   <div>
-                    <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Other Hours
                     </label>
                     <input
@@ -1257,7 +1266,7 @@ export function SubmitHoursPage() {
 
                 {/* Inducted Status */}
                 <div>
-                  <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     Induction Status <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -1281,8 +1290,8 @@ export function SubmitHoursPage() {
                 <div className={`p-6 rounded-xl border-2 border-dashed ${
                   darkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-300 bg-gray-50'
                 }`}>
-                  <label className={`block text-sm font-semibold mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Proof of Volunteering <span className="text-red-500">*</span>
+                  <label className={`block text-sm font-bold mb-3 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Proof Of Volunteering <span className="text-red-500">*</span>
                   </label>
                   
                   {/* File Upload */}
@@ -1380,7 +1389,7 @@ export function SubmitHoursPage() {
 
                       {/* Activity Description */}
                       <div>
-                        <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                           Activity Description & Explanation <span className="text-red-500">*</span>
                         </label>
                         <textarea
@@ -1406,7 +1415,7 @@ export function SubmitHoursPage() {
 
                       {/* Admin Code (Optional) */}
                       <div>
-                        <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                           Admin Override Code (Optional)
                         </label>
                         <input
