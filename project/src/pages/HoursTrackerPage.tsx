@@ -65,17 +65,17 @@ export function HoursTrackerPage() {
     }
   };
 
-  // Get hours color based on progress (assuming 20 hours goal)
+  // Get hours color based on progress (30 hours goal)
   const getHoursColor = (totalHours: number) => {
-    if (totalHours >= 20) return 'text-emerald-400';
-    if (totalHours >= 15) return 'text-blue-400';
+    if (totalHours >= 30) return 'text-emerald-400';
+    if (totalHours >= 20) return 'text-blue-400';
     if (totalHours >= 10) return 'text-amber-400';
     if (totalHours >= 5) return 'text-orange-400';
     return 'text-red-400';
   };
 
   const getHoursProgress = (totalHours: number) => {
-    return Math.min((totalHours / 20) * 100, 100);
+    return Math.min((totalHours / 30) * 100, 100);
   };
 
   return (
@@ -89,7 +89,7 @@ export function HoursTrackerPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
           className="text-center mb-8"
         >
           <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-blue-500/25">
@@ -283,6 +283,7 @@ export function HoursTrackerPage() {
                     <th className={`text-left p-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Grade</th>
                     <th className={`text-center p-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Summer</th>
                     <th className={`text-center p-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Chapter</th>
+                    <th className={`text-center p-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Other</th>
                     <th className={`text-center p-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Total</th>
                     <th className={`text-left p-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Progress</th>
                     <th className={`text-left p-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Status</th>
@@ -341,6 +342,13 @@ export function HoursTrackerPage() {
                           </span>
                         </td>
 
+                        {/* Other Hours */}
+                        <td className="p-4 text-center">
+                          <span className={`text-lg font-semibold ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                            {member.otherHours}
+                          </span>
+                        </td>
+
                         {/* Total Hours */}
                         <td className="p-4 text-center">
                           <span className={`text-2xl font-bold ${getHoursColor(member.totalHours)}`}>
@@ -356,8 +364,8 @@ export function HoursTrackerPage() {
                             }`}>
                               <div 
                                 className={`h-full rounded-full transition-all duration-500 ${
-                                  member.totalHours >= 20 ? 'bg-emerald-500' :
-                                  member.totalHours >= 15 ? 'bg-blue-500' :
+                                  member.totalHours >= 30 ? 'bg-emerald-500' :
+                                  member.totalHours >= 20 ? 'bg-blue-500' :
                                   member.totalHours >= 10 ? 'bg-amber-500' :
                                   member.totalHours >= 5 ? 'bg-orange-500' : 'bg-red-500'
                                 }`}
@@ -365,7 +373,7 @@ export function HoursTrackerPage() {
                               />
                             </div>
                             <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                              {member.totalHours}/20 goal
+                              {member.totalHours}/30 goal
                             </p>
                           </div>
                         </td>
@@ -402,7 +410,7 @@ export function HoursTrackerPage() {
           transition={{ duration: 0.4, delay: 0.4 }}
           className={`mt-6 text-center text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}
         >
-          Goal: 20 hours per semester • Data synced with Google Sheets
+          Goal: 30 hours total (10 by 1st semester, 20 more by end of year) • Data synced with Google Sheets
         </motion.div>
       </div>
     </div>

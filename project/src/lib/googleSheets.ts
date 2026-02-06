@@ -12,10 +12,10 @@ const SHEET_NAME = 'Sheet1';
 // 5. Set "Execute as: Me" and "Who has access: Anyone"
 // 6. Click Deploy and copy the URL
 // 7. Paste the URL below (it looks like: https://script.google.com/macros/s/...../exec)
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFY4v--dmcDAap_8QdDX6u1dKBXXqK5oHLj6zwTK9w-t586lV7u5chjuE8ugpbeS08lA/exec'; // Replace with your actual URL
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwYTKwI-HXnyxr4iKte0TKWW7NWxIVZPM9AeCodM3s3NGXYcOMJLzoLJo7JzNiB8JcF/exec';
 
 // Member hours tracking interface (for leaderboard)
-// Columns: Name | Grade | Inducted | Summer Hours | Chapter Hours | Total Hours
+// Columns: Name | Grade | Inducted | Summer Hours | Chapter Hours | Other Hours | Total Hours
 export interface MemberHours {
   id: string;
   name: string;
@@ -23,6 +23,7 @@ export interface MemberHours {
   inducted: boolean;
   summerHours: number;
   chapterHours: number;
+  otherHours: number;
   totalHours: number;
 }
 
@@ -31,16 +32,17 @@ export interface HoursSubmission {
   grade: string;
   summerHours: number;
   chapterHours: number;
+  otherHours: number;
   inducted: string;
 }
 
 /**
  * Fetches all members from Google Sheets (for leaderboard)
- * Sheet format: Name | Grade | Inducted | Summer Hours | Chapter Hours | Total Hours
+ * Sheet format: Name | Grade | Inducted | Summer Hours | Chapter Hours | Other Hours | Total Hours
  */
 export async function fetchMembers(): Promise<MemberHours[]> {
   try {
-    const range = `${SHEET_NAME}!A:F`;
+    const range = `${SHEET_NAME}!A:G`;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${GOOGLE_SHEETS_API_KEY}`;
     
     const response = await fetch(url);
@@ -54,7 +56,7 @@ export async function fetchMembers(): Promise<MemberHours[]> {
     const rows = data.values || [];
     
     // Skip header row and convert to objects
-    // Columns: Name | Grade | Inducted | Summer Hours | Chapter Hours | Total Hours
+    // Columns: Name | Grade | Inducted | Summer Hours | Chapter Hours | Other Hours | Total Hours
     return rows.slice(1).map((row: string[], index: number) => ({
       id: `member-${index + 2}`,
       name: row[0] || '',
@@ -62,7 +64,8 @@ export async function fetchMembers(): Promise<MemberHours[]> {
       inducted: (row[2] || '').toLowerCase() === 'yes',
       summerHours: parseFloat(row[3]) || 0,
       chapterHours: parseFloat(row[4]) || 0,
-      totalHours: parseFloat(row[5]) || 0
+      otherHours: parseFloat(row[5]) || 0,
+      totalHours: parseFloat(row[6]) || 0
     })).filter((member: MemberHours) => member.name.trim() !== '');
   } catch (error) {
     console.error('Error fetching members:', error);
@@ -81,7 +84,9 @@ export async function submitHours(submission: HoursSubmission): Promise<boolean>
   }
 
   try {
-    const totalHours = submission.summerHours + submission.chapterHours;
+    // Cap summer hours at 8 for total calculation
+    const effectiveSummerHours = Math.min(submission.summerHours, 8);
+    const totalHours = effectiveSummerHours + submission.chapterHours + submission.otherHours;
     
     const payload = {
       name: submission.name,
@@ -89,6 +94,7 @@ export async function submitHours(submission: HoursSubmission): Promise<boolean>
       inducted: submission.inducted,
       summerHours: submission.summerHours,
       chapterHours: submission.chapterHours,
+      otherHours: submission.otherHours,
       totalHours: totalHours
     };
 
@@ -119,11 +125,12 @@ export function isWriteEnabled(): boolean {
 }
 
 // ============================================
-// GOOGLE APPS SCRIPT CODE (UPDATED v2)
+// GOOGLE APPS SCRIPT CODE (UPDATED v3 - with Other Hours)
 // ============================================
 // Copy this code to your Google Sheet's Apps Script editor:
 // (Extensions > Apps Script)
 // IMPORTANT: After pasting, click Deploy > New Deployment again!
+// Sheet columns: Name | Grade | Inducted | Summer Hours | Chapter Hours | Other Hours | Total Hours
 /*
 
 function doGet(e) {
@@ -142,16 +149,21 @@ function doGet(e) {
           // Update existing row - ADD new hours to existing hours
           var existingSummer = parseFloat(values[i][3]) || 0;
           var existingChapter = parseFloat(values[i][4]) || 0;
+          var existingOther = parseFloat(values[i][5]) || 0;
           var newSummer = existingSummer + parseFloat(data.summerHours);
           var newChapter = existingChapter + parseFloat(data.chapterHours);
-          var newTotal = newSummer + newChapter;
+          var newOther = existingOther + parseFloat(data.otherHours);
+          // Cap summer hours at 8 for total calculation
+          var effectiveSummer = Math.min(newSummer, 8);
+          var newTotal = effectiveSummer + newChapter + newOther;
           
-          sheet.getRange(i + 1, 1, 1, 6).setValues([[
+          sheet.getRange(i + 1, 1, 1, 7).setValues([[
             data.name,
             data.grade,
             data.inducted,
             newSummer,
             newChapter,
+            newOther,
             newTotal
           ]]);
           found = true;
@@ -167,6 +179,7 @@ function doGet(e) {
           data.inducted,
           parseFloat(data.summerHours) || 0,
           parseFloat(data.chapterHours) || 0,
+          parseFloat(data.otherHours) || 0,
           parseFloat(data.totalHours) || 0
         ]);
       }
@@ -193,12 +206,13 @@ function doPost(e) {
     
     for (var i = 1; i < values.length; i++) {
       if (values[i][0] && values[i][0].toString().toLowerCase() === data.name.toLowerCase()) {
-        sheet.getRange(i + 1, 1, 1, 6).setValues([[
+        sheet.getRange(i + 1, 1, 1, 7).setValues([[
           data.name,
           data.grade,
           data.inducted,
           data.summerHours,
           data.chapterHours,
+          data.otherHours,
           data.totalHours
         ]]);
         found = true;
@@ -213,6 +227,7 @@ function doPost(e) {
         data.inducted,
         data.summerHours,
         data.chapterHours,
+        data.otherHours,
         data.totalHours
       ]);
     }
