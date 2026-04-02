@@ -4,7 +4,8 @@ import { Send, CheckCircle, AlertCircle, Trophy, ArrowRight, Clock, Users, Award
 import { useNavigate } from 'react-router-dom';
 import { useDarkMode } from '../lib/darkModeContext';
 import { submitHours, isWriteEnabled, fetchMembers, type HoursSubmission, type MemberHours } from '../lib/googleSheets';
-import { validateImageFile, type ImageVerificationResult } from '../lib/imageVerification';
+import { validateImageFile, type ImageVerificationResult, verifyImage } from '../lib/imageVerification';
+
 
 // Confetti particle component
 const ConfettiParticle = ({ delay, x }: { delay: number; x: number }) => {
@@ -338,10 +339,40 @@ export function SubmitHoursPage() {
   // Image verification states
   const [proofImage, setProofImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [activityDescription, setActivityDescription] = useState('');
   const [adminCode, setAdminCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationResult, setVerificationResult] = useState<ImageVerificationResult | null>(null);
+  const [showVerifiedPopup, setShowVerifiedPopup] = useState(false);
+  const [showFailedPopup, setShowFailedPopup] = useState(false);
+  const [verifyPopupReasoning, setVerifyPopupReasoning] = useState('');
+  const [verifyConfetti, setVerifyConfetti] = useState<Array<{ id: number; delay: number; x: number }>>([]);
+
+  // Sentence frame fields for structured description
+  const [sfOrganization, setSfOrganization] = useState('');
+  const [sfActivity, setSfActivity] = useState('');
+  const [sfDate, setSfDate] = useState('');
+  const [sfLocation, setSfLocation] = useState('');
+  const [sfPhotoShows, setSfPhotoShows] = useState('');
+
+  // Build the full activity description from the sentence frame
+  const activityDescription = [
+    sfOrganization && `I volunteered with ${sfOrganization}`,
+    sfActivity && `where I ${sfActivity}`,
+    sfDate && `on ${sfDate}`,
+    sfLocation && `at ${sfLocation}`,
+    sfPhotoShows && `My photo shows ${sfPhotoShows}`,
+  ].filter(Boolean).join(', ') + '.';
+
+  const sentenceFrameFilled = sfOrganization.trim().length > 0 && sfActivity.trim().length > 0 && sfPhotoShows.trim().length > 0;
+
+  const resetSentenceFrame = () => {
+    setSfOrganization('');
+    setSfActivity('');
+    setSfDate('');
+    setSfLocation('');
+    setSfPhotoShows('');
+  };
+
   const [isVerified, setIsVerified] = useState(false);
 
   const writeEnabled = isWriteEnabled();
@@ -460,17 +491,7 @@ export function SubmitHoursPage() {
     setSubmitStatus('idle');
   };
 
-  // Helper function to check if description contains explanatory words
-  const hasExplanatoryWords = (text: string): boolean => {
-    const explanatoryWords = [
-      'because', 'since', 'as', 'so that', 'in order to', 'therefore',
-      'which shows', 'this shows', 'this proves', 'which proves',
-      'demonstrates', 'supports', 'evidence', 'proving', 'showing',
-      'due to', 'reason', 'explains', 'indicating', 'confirms'
-    ];
-    const lowerText = text.toLowerCase();
-    return explanatoryWords.some(word => lowerText.includes(word));
-  };
+
 
   const handleVerifyImage = async () => {
     // Check for admin bypass code
@@ -482,53 +503,62 @@ export function SubmitHoursPage() {
       return;
     }
 
+    // Require sentence frame fields filled
+    if (!sentenceFrameFilled) {
+      setErrorMessage('Please fill in at least the Organization, Activity, and Photo Description fields.');
+      setSubmitStatus('error');
+      return;
+    }
+
     if (!proofImage) {
       setErrorMessage('Please upload an image first');
       setSubmitStatus('error');
       return;
     }
 
-    if (!activityDescription.trim()) {
-      setErrorMessage('Please describe your volunteer activity and explain how this image supports it');
-      setSubmitStatus('error');
-      return;
-    }
-
-    if (activityDescription.trim().length < 50) {
-      setErrorMessage('Please provide a more detailed description (at least 50 characters). Include what activity you did and explain how the image proves it.');
-      setSubmitStatus('error');
-      return;
-    }
-
-    // Check for explanatory words - REQUIRED
-    if (!hasExplanatoryWords(activityDescription)) {
-      setErrorMessage('Your description must explain HOW the image supports your activity. Use words like "because", "since", "this shows", "which proves", etc. For example: "This image proves my volunteering BECAUSE it shows me wearing the organization\'s volunteer badge."');
-      setSubmitStatus('error');
-      setVerificationResult({
-        isValid: false,
-        error: 'Missing explanation',
-        geminiReasoning: 'Your description must include an explanation of how the image supports your activity. Please use connecting words like "because", "since", "this shows", "which proves", etc. to explain the connection between your activity and the image.'
-      });
-      setIsVerified(false);
-      return;
-    }
-
-    // If they included explanatory words, auto-accept
     setIsVerifying(true);
     setSubmitStatus('idle');
     setErrorMessage('');
 
-    // Small delay to show verification is happening
-    await new Promise(resolve => setTimeout(resolve, 800));
+    // Single Gemini call: send image + description together
+    const verification = await verifyImage(proofImage, activityDescription);
 
+    if (!verification.isValid) {
+      const reason = verification.geminiReasoning || verification.error || 'Your image and description do not match. Please try again.';
+      setVerificationResult({
+        isValid: false,
+        geminiReasoning: reason,
+        suggestions: verification.suggestions
+      });
+      setIsVerified(false);
+      setIsVerifying(false);
+      // Show failure popup
+      setVerifyPopupReasoning(reason);
+      setShowFailedPopup(true);
+      setTimeout(() => setShowFailedPopup(false), 5000);
+      return;
+    }
+
+    const reason = verification.geminiReasoning || 'Your proof looks good!';
     setVerificationResult({
       isValid: true,
-      geminiReasoning: 'Your description adequately explains the activity and how the image supports it. Submission verified.'
+      geminiReasoning: reason
     });
     setIsVerified(true);
-    setSubmitStatus('success');
+    setSubmitStatus('idle');
     setErrorMessage('');
     setIsVerifying(false);
+
+    // Show success popup with confetti
+    setVerifyPopupReasoning(reason);
+    const particles = Array.from({ length: 80 }, (_, i) => ({
+      id: i,
+      delay: Math.random() * 0.4,
+      x: Math.random() * window.innerWidth
+    }));
+    setVerifyConfetti(particles);
+    setShowVerifiedPopup(true);
+    setTimeout(() => setShowVerifiedPopup(false), 4000);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -561,6 +591,14 @@ export function SubmitHoursPage() {
     
     if (!formData.name || !formData.grade || !formData.inducted) {
       setErrorMessage('Please fill in all required fields');
+      setSubmitStatus('error');
+      return;
+    }
+
+    // Max 500 hours per submission
+    const submissionTotal = (parseFloat(formData.summerHours) || 0) + (parseFloat(formData.chapterHours) || 0) + (parseFloat(formData.otherHours) || 0);
+    if (submissionTotal > 500) {
+      setErrorMessage('You cannot submit more than 500 hours at once. Please reduce your hours.');
       setSubmitStatus('error');
       return;
     }
@@ -642,7 +680,7 @@ export function SubmitHoursPage() {
       // Reset image verification
       setProofImage(null);
       setImagePreview(null);
-      setActivityDescription('');
+      resetSentenceFrame();
       setAdminCode('');
       setIsVerified(false);
       setVerificationResult(null);
@@ -714,6 +752,134 @@ export function SubmitHoursPage() {
             submittedName={submittedName}
             stats={celebrationStats}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Verification Success Popup with Confetti */}
+      <AnimatePresence>
+        {showVerifiedPopup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            onClick={() => setShowVerifiedPopup(false)}
+          >
+            <div className={`absolute inset-0 ${darkMode ? 'bg-gray-900/80' : 'bg-black/40'} backdrop-blur-sm`} />
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {verifyConfetti.map((particle) => (
+                <ConfettiParticle key={particle.id} delay={particle.delay} x={particle.x} />
+              ))}
+            </div>
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0, y: -20 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className={`relative z-10 p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4 ${
+                darkMode 
+                  ? 'bg-gradient-to-b from-gray-800 to-gray-900 border border-emerald-500/30' 
+                  : 'bg-white border border-emerald-200'
+              }`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+                className={`w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center ${
+                  darkMode ? 'bg-emerald-500/20' : 'bg-emerald-100'
+                }`}
+              >
+                <CheckCircle className={`w-10 h-10 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
+              </motion.div>
+              <motion.h2
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className={`text-2xl font-bold mb-2 ${darkMode ? 'text-emerald-400' : 'text-emerald-700'}`}
+              >
+                Verified!
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}
+              >
+                {verifyPopupReasoning}
+              </motion.p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Verification Failed Popup */}
+      <AnimatePresence>
+        {showFailedPopup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            onClick={() => setShowFailedPopup(false)}
+          >
+            <div className={`absolute inset-0 ${darkMode ? 'bg-gray-900/80' : 'bg-black/40'} backdrop-blur-sm`} />
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0, y: -20 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className={`relative z-10 p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4 ${
+                darkMode 
+                  ? 'bg-gradient-to-b from-gray-800 to-gray-900 border border-red-500/30' 
+                  : 'bg-white border border-red-200'
+              }`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+                className={`w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center ${
+                  darkMode ? 'bg-red-500/20' : 'bg-red-100'
+                }`}
+              >
+                <AlertCircle className={`w-10 h-10 ${darkMode ? 'text-red-400' : 'text-red-600'}`} />
+              </motion.div>
+              <motion.h2
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className={`text-2xl font-bold mb-2 ${darkMode ? 'text-red-400' : 'text-red-700'}`}
+              >
+                Not Verified
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}
+              >
+                {verifyPopupReasoning}
+              </motion.p>
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                onClick={() => setShowFailedPopup(false)}
+                className={`mt-4 px-6 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  darkMode
+                    ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                    : 'bg-red-100 text-red-700 hover:bg-red-200'
+                }`}
+              >
+                Try Again
+              </motion.button>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -796,10 +962,10 @@ export function SubmitHoursPage() {
                       <h2 className={`text-3xl lg:text-4xl font-bold mb-3 ${
                         darkMode ? 'text-white' : 'text-gray-900'
                       }`}>
-                        Have You Submitted Hours Before?
+                        Have You Submitted Hours On This Website Before?
                       </h2>
                       <p className={`text-base ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                        Select An Option To Continue
+                        If this is your first time using this site, select <span className={`font-semibold ${darkMode ? 'text-red-400' : 'text-red-600'}`}>"New to This Site"</span> below
                       </p>
                     </div>
                     
@@ -827,10 +993,10 @@ export function SubmitHoursPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className={`font-bold text-xl ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                              Yes, I've Submitted Before
+                              I've Submitted On This Site Before
                             </h4>
                             <p className={`text-sm mt-1 ${darkMode ? 'text-blue-300' : 'text-blue-600'}`}>
-                              Find My Existing Record
+                              Find my existing record on this website
                             </p>
                           </div>
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all group-hover:translate-x-1 ${
@@ -864,10 +1030,10 @@ export function SubmitHoursPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className={`font-bold text-xl ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                              No, This Is My First Time
+                              New to This Site
                             </h4>
                             <p className={`text-sm mt-1 ${darkMode ? 'text-red-300' : 'text-red-600'}`}>
-                              Create A New Profile
+                              I've never submitted hours on this website before
                             </p>
                           </div>
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all group-hover:translate-x-1 ${
@@ -894,7 +1060,7 @@ export function SubmitHoursPage() {
                         setVerificationResult(null);
                         setProofImage(null);
                         setImagePreview(null);
-                        setActivityDescription('');
+                        resetSentenceFrame();
                       }}
                       className={`mb-4 text-sm flex items-center gap-1 transition-colors ${
                         darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'
@@ -1100,6 +1266,7 @@ export function SubmitHoursPage() {
                       type="number"
                       name="summerHours"
                       min="0"
+                      max="500"
                       step="0.5"
                       value={formData.summerHours}
                       onChange={handleChange}
@@ -1120,6 +1287,7 @@ export function SubmitHoursPage() {
                       type="number"
                       name="chapterHours"
                       min="0"
+                      max="500"
                       step="0.5"
                       value={formData.chapterHours}
                       onChange={handleChange}
@@ -1140,6 +1308,7 @@ export function SubmitHoursPage() {
                       type="number"
                       name="otherHours"
                       min="0"
+                      max="500"
                       step="0.5"
                       value={formData.otherHours}
                       onChange={handleChange}
@@ -1331,7 +1500,7 @@ export function SubmitHoursPage() {
                             setImagePreview(null);
                             setIsVerified(false);
                             setVerificationResult(null);
-                            setActivityDescription('');
+                            resetSentenceFrame();
                             setAdminCode('');
                           }}
                           className={`absolute top-2 right-2 p-2 rounded-lg ${
@@ -1342,75 +1511,103 @@ export function SubmitHoursPage() {
                         </button>
                       </div>
 
-                      {/* Verification Result Display (after verification is attempted) */}
-                      {verificationResult && !isVerified && verificationResult.geminiReasoning && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className={`p-4 rounded-xl flex items-start gap-3 ${
-                            darkMode 
-                              ? 'bg-red-900/30 border border-red-500/30' 
-                              : 'bg-red-50 border border-red-200'
-                          }`}
-                        >
-                          <AlertCircle className={`w-5 h-5 mt-0.5 flex-shrink-0 ${darkMode ? 'text-red-400' : 'text-red-600'}`} />
-                          <div>
-                            <p className={`font-semibold ${darkMode ? 'text-red-400' : 'text-red-800'}`}>
-                              Verification Failed
-                            </p>
-                            <p className={`text-sm mt-1 ${darkMode ? 'text-red-300' : 'text-red-700'}`}>
-                              {verificationResult.geminiReasoning}
-                            </p>
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {isVerified && verificationResult?.isValid && verificationResult.geminiReasoning && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className={`p-4 rounded-xl flex items-start gap-3 ${
-                            darkMode 
-                              ? 'bg-blue-900/30 border border-blue-500/30' 
-                              : 'bg-blue-50 border border-blue-200'
-                          }`}
-                        >
-                          <CheckCircle className={`w-5 h-5 mt-0.5 flex-shrink-0 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
-                          <div>
-                            <p className={`font-semibold ${darkMode ? 'text-blue-400' : 'text-blue-800'}`}>
-                              AI Analysis
-                            </p>
-                            <p className={`text-sm mt-1 ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>
-                              {verificationResult.geminiReasoning}
-                            </p>
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {/* Activity Description */}
-                      <div>
-                        <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                          Activity Description & Explanation <span className="text-red-500">*</span>
+                      {/* Sentence Frame - Structured Activity Description */}
+                      <div className="space-y-3">
+                        <label className={`block text-sm font-bold mb-1 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          Describe Your Activity <span className="text-red-500">*</span>
                         </label>
-                        <textarea
-                          value={activityDescription}
-                          onChange={(e) => setActivityDescription(e.target.value)}
-                          placeholder="Example: I volunteered at the Kirkland Food Bank on October 15th sorting donations. This image proves my participation BECAUSE it shows me wearing the official volunteer badge with the food bank logo clearly visible in the background."
-                          rows={4}
-                          className={`w-full px-4 py-3 rounded-xl border transition-all resize-none ${
-                            darkMode 
-                              ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
-                              : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
-                          }`}
-                        />
-                        <div className={`mt-2 p-3 rounded-lg ${darkMode ? 'bg-gray-700/50' : 'bg-blue-50'}`}>
-                          <p className={`text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                            📝 <span className="font-semibold">Required:</span> Explain how the image supports your activity.
-                          </p>
-                          <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                            Use words like <span className={`font-medium ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>"because"</span>, <span className={`font-medium ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>"this shows"</span>, or <span className={`font-medium ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>"which proves"</span> • Min 50 characters
-                          </p>
+                        <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          Fill in the fields below. Organization, Activity, and Photo Description are required.
+                        </p>
+
+                        {/* Organization */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>I volunteered with</span>
+                          <input
+                            type="text"
+                            value={sfOrganization}
+                            onChange={(e) => { setSfOrganization(e.target.value); setIsVerified(false); setVerificationResult(null); }}
+                            placeholder="e.g. Kirkland Food Bank"
+                            className={`flex-1 min-w-[160px] px-3 py-2 rounded-lg border text-sm transition-all ${
+                              darkMode
+                                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
+                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                            }`}
+                          />
                         </div>
+
+                        {/* Activity */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>where I</span>
+                          <input
+                            type="text"
+                            value={sfActivity}
+                            onChange={(e) => { setSfActivity(e.target.value); setIsVerified(false); setVerificationResult(null); }}
+                            placeholder="e.g. sorted food donations and stocked shelves"
+                            className={`flex-1 min-w-[160px] px-3 py-2 rounded-lg border text-sm transition-all ${
+                              darkMode
+                                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
+                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                            }`}
+                          />
+                        </div>
+
+                        {/* Date */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>on</span>
+                          <input
+                            type="text"
+                            value={sfDate}
+                            onChange={(e) => { setSfDate(e.target.value); setIsVerified(false); setVerificationResult(null); }}
+                            placeholder="e.g. March 15, 2026"
+                            className={`flex-1 min-w-[140px] px-3 py-2 rounded-lg border text-sm transition-all ${
+                              darkMode
+                                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
+                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                            }`}
+                          />
+                        </div>
+
+                        {/* Location */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>at</span>
+                          <input
+                            type="text"
+                            value={sfLocation}
+                            onChange={(e) => { setSfLocation(e.target.value); setIsVerified(false); setVerificationResult(null); }}
+                            placeholder="e.g. 11220 NE 132nd St, Kirkland"
+                            className={`flex-1 min-w-[160px] px-3 py-2 rounded-lg border text-sm transition-all ${
+                              darkMode
+                                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
+                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                            }`}
+                          />
+                        </div>
+
+                        {/* Photo description */}
+                        <div className="flex items-start gap-2 flex-wrap">
+                          <span className={`text-sm font-medium whitespace-nowrap mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>My photo shows</span>
+                          <input
+                            type="text"
+                            value={sfPhotoShows}
+                            onChange={(e) => { setSfPhotoShows(e.target.value); setIsVerified(false); setVerificationResult(null); }}
+                            placeholder="e.g. me organizing canned goods with other volunteers"
+                            className={`flex-1 min-w-[160px] px-3 py-2 rounded-lg border text-sm transition-all ${
+                              darkMode
+                                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
+                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                            }`}
+                          />
+                        </div>
+
+                        {/* Preview of generated description */}
+                        {sentenceFrameFilled && (
+                          <div className={`mt-2 p-3 rounded-lg text-xs italic ${
+                            darkMode ? 'bg-gray-800/50 text-gray-400 border border-gray-700/50' : 'bg-gray-100 text-gray-500 border border-gray-200'
+                          }`}>
+                            {activityDescription}
+                          </div>
+                        )}
                       </div>
 
                       {/* Admin Code (Optional) */}
@@ -1462,12 +1659,12 @@ export function SubmitHoursPage() {
                         </button>
                       )}
 
-                      {/* Verification Success Banner */}
+                      {/* Verified inline indicator */}
                       {isVerified && verificationResult?.isValid && (
                         <motion.div
                           initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
-                          className={`p-4 rounded-xl flex items-center justify-center gap-3 ${
+                          className={`p-3 rounded-xl flex items-center justify-center gap-2 ${
                             darkMode 
                               ? 'bg-emerald-900/30 border border-emerald-500/30' 
                               : 'bg-emerald-50 border border-emerald-200'
@@ -1475,10 +1672,11 @@ export function SubmitHoursPage() {
                         >
                           <CheckCircle className={`w-5 h-5 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
                           <p className={`font-semibold ${darkMode ? 'text-emerald-400' : 'text-emerald-800'}`}>
-                            ✓ Verified - Ready for Submission
+                            ✓ Verified — Ready to Submit
                           </p>
                         </motion.div>
                       )}
+
                     </div>
                   )}
                 </div>

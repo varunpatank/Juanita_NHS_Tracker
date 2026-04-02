@@ -122,7 +122,7 @@ export function HoursTrackerPage() {
             <div className="flex items-center justify-between mb-3">
               <Users className={`w-8 h-8 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
             </div>
-            <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{totalMembers}</p>
+            <p className={`text-3xl font-bold truncate ${darkMode ? 'text-white' : 'text-gray-800'}`}>{totalMembers}</p>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Members</p>
           </div>
           <div className={`p-6 rounded-2xl border ${
@@ -133,7 +133,7 @@ export function HoursTrackerPage() {
             <div className="flex items-center justify-between mb-3">
               <Award className={`w-8 h-8 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
             </div>
-            <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{inductedCount}</p>
+            <p className={`text-3xl font-bold truncate ${darkMode ? 'text-white' : 'text-gray-800'}`}>{inductedCount}</p>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Inducted</p>
           </div>
           <div className={`p-6 rounded-2xl border ${
@@ -144,7 +144,7 @@ export function HoursTrackerPage() {
             <div className="flex items-center justify-between mb-3">
               <Star className={`w-8 h-8 ${darkMode ? 'text-amber-400' : 'text-amber-600'}`} />
             </div>
-            <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{totalHours}</p>
+            <p className={`text-3xl font-bold truncate ${darkMode ? 'text-white' : 'text-gray-800'}`}>{totalHours}</p>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Hours</p>
           </div>
           <div className={`p-6 rounded-2xl border ${
@@ -155,7 +155,7 @@ export function HoursTrackerPage() {
             <div className="flex items-center justify-between mb-3">
               <Trophy className={`w-8 h-8 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`} />
             </div>
-            <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{avgHours}</p>
+            <p className={`text-3xl font-bold truncate ${darkMode ? 'text-white' : 'text-gray-800'}`}>{avgHours}</p>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Avg Hours</p>
           </div>
         </motion.div>
@@ -275,18 +275,18 @@ export function HoursTrackerPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full table-fixed">
                 <thead>
                   <tr className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                    <th className={`text-left p-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Rank</th>
+                    <th className={`text-left p-4 font-semibold w-16 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Rank</th>
                     <th className={`text-left p-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Name</th>
-                    <th className={`text-left p-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Grade</th>
-                    <th className={`text-center p-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Summer</th>
-                    <th className={`text-center p-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Chapter</th>
-                    <th className={`text-center p-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Other</th>
-                    <th className={`text-center p-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Total</th>
-                    <th className={`text-left p-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Progress</th>
-                    <th className={`text-left p-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Status</th>
+                    <th className={`text-left p-4 font-semibold w-28 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Grade</th>
+                    <th className={`text-center p-4 font-semibold whitespace-nowrap w-20 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Summer</th>
+                    <th className={`text-center p-4 font-semibold whitespace-nowrap w-20 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Chapter</th>
+                    <th className={`text-center p-4 font-semibold whitespace-nowrap w-20 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Other</th>
+                    <th className={`text-center p-4 font-semibold whitespace-nowrap w-20 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Total</th>
+                    <th className={`text-left p-4 font-semibold w-40 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Progress</th>
+                    <th className={`text-left p-4 font-semibold w-36 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -330,28 +330,28 @@ export function HoursTrackerPage() {
 
                         {/* Summer Hours */}
                         <td className="p-4 text-center">
-                          <span className={`text-lg font-semibold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                          <span className={`font-semibold tabular-nums ${member.summerHours >= 100 ? 'text-base' : 'text-lg'} ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
                             {member.summerHours}
                           </span>
                         </td>
 
                         {/* Chapter Hours */}
                         <td className="p-4 text-center">
-                          <span className={`text-lg font-semibold ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+                          <span className={`font-semibold tabular-nums ${member.chapterHours >= 100 ? 'text-base' : 'text-lg'} ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
                             {member.chapterHours}
                           </span>
                         </td>
 
                         {/* Other Hours */}
                         <td className="p-4 text-center">
-                          <span className={`text-lg font-semibold ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                          <span className={`font-semibold tabular-nums ${member.otherHours >= 100 ? 'text-base' : 'text-lg'} ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
                             {member.otherHours}
                           </span>
                         </td>
 
                         {/* Total Hours */}
                         <td className="p-4 text-center">
-                          <span className={`text-2xl font-bold ${getHoursColor(member.totalHours)}`}>
+                          <span className={`font-bold tabular-nums ${member.totalHours >= 100 ? 'text-xl' : 'text-2xl'} ${getHoursColor(member.totalHours)}`}>
                             {member.totalHours}
                           </span>
                         </td>
@@ -379,7 +379,7 @@ export function HoursTrackerPage() {
                         </td>
 
                         {/* Inducted Status */}
-                        <td className="p-4">
+                        <td className="p-4 whitespace-nowrap">
                           {member.inducted ? (
                             <span className="px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/50">
                               ✓ Inducted

@@ -3,8 +3,33 @@
 @tailwind utilities;
 
 html {
-  zoom: 125%;
+  zoom: 110%;
   scroll-behavior: smooth;
+}
+
+/* Responsive zoom adjustments for different screen sizes */
+@media (max-width: 640px) {
+  html {
+    zoom: 100%; /* phones: native sizing */
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  html {
+    zoom: 110%; /* tablets */
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1440px) {
+  html {
+    zoom: 110%; /* standard desktops */
+  }
+}
+
+@media (min-width: 1441px) {
+  html {
+    zoom: 110%; /* large monitors */
+  }
 }
 
 /* Light mode - softer, less bright */
