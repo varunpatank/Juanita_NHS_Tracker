@@ -13,34 +13,28 @@ export interface ImageVerificationResult {
  * Moderately strict: must actually match, but allows legit proof types.
  */
 function buildPrompt(description: string): string {
-  return `You verify NHS volunteer hour photo submissions. Be moderately strict.
+  return `You verify NHS volunteer hour photo submissions. Be LENIENT — give students the benefit of the doubt.
 
 Student's description: "${description}"
 
-Carefully compare the image to the description above.
+Your job is simple: does this image plausibly relate to the described volunteer activity? It does NOT need to be a perfect match.
 
-APPROVE if the image clearly shows evidence matching the described activity:
-- Photo of student volunteering or working at the described location/activity
-- Sign-in sheet or attendance log that plausibly matches the described org/activity/date
-- Official letter, certificate, or supervisor note referencing the described volunteer work
-- Confirmation email or screenshot mentioning the described event or organization
-- Signature or handwritten note confirming the volunteer work described
+APPROVE if there is any reasonable connection between the image and description:
+- Any photo taken at or near the described location/event, even if indirect
+- Sign-in sheet, attendance log, or roster (doesn't need to perfectly match every detail)
+- Any letter, note, email, certificate, or screenshot mentioning volunteer work
+- A signature, handwritten note, or message from someone confirming the student did something
+- A photo of the student, a group, a workspace, materials, or an environment consistent with the type of activity described
+- Screenshots of texts, emails, or messages related to volunteering
+- If the description says "helped clean up park" and the image shows outdoor cleanup supplies or a park, APPROVE
 
-REJECT if:
-- The image has NO plausible connection to the described activity (e.g. random selfie when describing food bank work, landscape photo, meme)
-- The image is a cartoon, drawing, AI-generated image, or clearly unrelated stock photo
-- Text visible in the image refers to a completely different organization or activity than described
-- The student described one specific activity but the image clearly shows something entirely different
-- The image is blank, completely blurry, or has no discernible relevant content
+REJECT ONLY if:
+- The image is completely, obviously unrelated with no possible connection (e.g. a meme, random celebrity photo, blank image, explicit content)
+- The image clearly shows a specific different activity that contradicts the description entirely
 
-IMPORTANT: "When in doubt" is NOT a reason to approve. The image must have a real, direct connection to what was described.
+When in doubt, APPROVE. Students deserve good faith.
 
-Example: "Volunteered at Food Bank sorting food" + beach selfie = REJECT
-Example: "Volunteered at Food Bank" + sign-in sheet from a food bank = APPROVE
-Example: "Tutored students at Juanita HS" + signature from teacher at Juanita HS confirming tutoring = APPROVE
-Example: "Helped at animal shelter" + random photo of a dog at home = REJECT (not at a shelter)
-
-Respond ONLY as JSON: {"isValid": true/false, "reasoning": "clear explanation of why approved or rejected", "suggestions": []}`;
+Respond ONLY as JSON: {"isValid": true/false, "reasoning": "brief explanation", "suggestions": []}`;
 }
 
 /**
@@ -80,7 +74,7 @@ export async function verifyImage(imageFile: File, activityDescription: string):
             }
           ],
           generationConfig: {
-            temperature: 0.2,
+            temperature: 0.1,
             maxOutputTokens: 1024,
             responseMimeType: 'application/json',
           }

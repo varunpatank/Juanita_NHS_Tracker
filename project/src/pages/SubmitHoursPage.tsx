@@ -537,7 +537,6 @@ export function SubmitHoursPage() {
       // Show failure popup
       setVerifyPopupReasoning(reason);
       setShowFailedPopup(true);
-      setTimeout(() => setShowFailedPopup(false), 5000);
       return;
     }
 
@@ -873,16 +872,17 @@ export function SubmitHoursPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-50 flex items-center justify-center"
+            className="fixed inset-0 z-50 overflow-y-auto"
             onClick={() => setShowFailedPopup(false)}
           >
-            <div className={`absolute inset-0 ${darkMode ? 'bg-gray-900/80' : 'bg-black/40'} backdrop-blur-sm`} />
+            <div className={`fixed inset-0 ${darkMode ? 'bg-gray-900/80' : 'bg-black/40'} backdrop-blur-sm`} />
+            <div className="flex min-h-full items-center justify-center py-8 px-4">
             <motion.div
               initial={{ scale: 0.5, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.8, opacity: 0, y: -20 }}
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              className={`relative z-10 p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4 ${
+              className={`relative z-10 p-8 rounded-2xl shadow-2xl text-center w-full max-w-sm ${
                 darkMode 
                   ? 'bg-gradient-to-b from-gray-800 to-gray-900 border border-red-500/30' 
                   : 'bg-white border border-red-200'
@@ -911,7 +911,7 @@ export function SubmitHoursPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}
+                className={`text-sm break-words ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}
               >
                 {verifyPopupReasoning}
               </motion.p>
@@ -929,6 +929,7 @@ export function SubmitHoursPage() {
                 Try Again
               </motion.button>
             </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
