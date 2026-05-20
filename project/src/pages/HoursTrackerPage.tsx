@@ -28,17 +28,19 @@ export function HoursTrackerPage() {
     }
   };
 
-  // Filter and search
-  const filteredMembers = members.filter(member => {
-    const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesGrade = !filterGrade || member.grade.toLowerCase() === filterGrade.toLowerCase();
-    const matchesInducted = !filterInducted || 
-      (filterInducted === 'yes' ? member.inducted : !member.inducted);
-    return matchesSearch && matchesGrade && matchesInducted;
-  });
+  // Filter and sort — top 5 by default, show all when searching
+  const allSortedFiltered = [...members]
+    .filter(member => {
+      const matchesGrade = !filterGrade || member.grade.toLowerCase() === filterGrade.toLowerCase();
+      const matchesInducted = !filterInducted || 
+        (filterInducted === 'yes' ? member.inducted : !member.inducted);
+      return matchesGrade && matchesInducted;
+    })
+    .sort((a, b) => b.totalHours - a.totalHours);
 
-  // Sort by total hours (highest first)
-  const sortedMembers = [...filteredMembers].sort((a, b) => b.totalHours - a.totalHours);
+  const sortedMembers = searchTerm.trim()
+    ? allSortedFiltered.filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    : allSortedFiltered.slice(0, 5);
 
   // Get stats
   const totalMembers = members.length;
@@ -257,7 +259,13 @@ export function HoursTrackerPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.3 }}
-          className={`rounded-2xl border overflow-hidden ${
+        >
+          {!searchTerm.trim() && (
+            <p className={`text-sm mb-3 text-center ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+              Showing top 5 · Search by name to find any member
+            </p>
+          )}
+        <div className={`rounded-2xl border overflow-hidden ${
             darkMode 
               ? 'bg-gray-800/50 border-gray-700/50 backdrop-blur-sm' 
               : 'bg-white border-blue-100 shadow-xl shadow-blue-500/10'
@@ -401,6 +409,7 @@ export function HoursTrackerPage() {
               </table>
             </div>
           )}
+        </div>
         </motion.div>
 
         {/* Footer Note */}

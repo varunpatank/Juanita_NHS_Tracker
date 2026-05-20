@@ -70,8 +70,8 @@ const SuccessCelebration = ({
     }));
     setConfetti(particles);
     
-    // Auto-close after animation (longer to view stats)
-    const timer = setTimeout(onComplete, 8000);
+    // Auto-close after animation
+    const timer = setTimeout(onComplete, 4000);
     return () => clearTimeout(timer);
   }, [onComplete]);
 
@@ -85,11 +85,12 @@ const SuccessCelebration = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className={`fixed inset-0 z-50 flex items-center justify-center overflow-y-auto py-8 ${
+      className={`fixed inset-0 z-50 overflow-y-auto ${
         darkMode ? 'bg-gray-900/95' : 'bg-white/95'
       } backdrop-blur-sm`}
       onClick={onComplete}
     >
+      <div className="flex min-h-full items-center justify-center py-8 px-4">
       {/* Confetti */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {confetti.map((particle) => (
@@ -107,7 +108,7 @@ const SuccessCelebration = ({
           damping: 15,
           delay: 0.2
         }}
-        className="text-center z-10 px-8 max-w-lg mx-auto"
+        className="text-center z-10 px-8 max-w-lg w-full mx-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Animated checkmark circle */}
@@ -289,7 +290,7 @@ const SuccessCelebration = ({
             Submit More
           </button>
           <button
-            onClick={() => window.location.href = '/hours-tracker'}
+            onClick={onComplete}
             className="px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
           >
             <Trophy className="w-5 h-5" />
@@ -306,6 +307,7 @@ const SuccessCelebration = ({
           Click anywhere to close
         </motion.p>
       </motion.div>
+      </div>
     </motion.div>
   );
 };
@@ -341,7 +343,7 @@ export function SubmitHoursPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [adminCode, setAdminCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
-  const [verificationResult, setVerificationResult] = useState<ImageVerificationResult | null>(null);
+  const [_verificationResult, setVerificationResult] = useState<ImageVerificationResult | null>(null);
   const [showVerifiedPopup, setShowVerifiedPopup] = useState(false);
   const [showFailedPopup, setShowFailedPopup] = useState(false);
   const [verifyPopupReasoning, setVerifyPopupReasoning] = useState('');
@@ -497,9 +499,9 @@ export function SubmitHoursPage() {
     // Check for admin bypass code
     if (adminCode === '1060801') {
       setIsVerified(true);
-      setSubmitStatus('success');
-      setErrorMessage('');
       setVerificationResult({ isValid: true });
+      setVerifyPopupReasoning('Admin override — submission approved.');
+      setShowVerifiedPopup(true);
       return;
     }
 
@@ -558,25 +560,38 @@ export function SubmitHoursPage() {
     }));
     setVerifyConfetti(particles);
     setShowVerifiedPopup(true);
-    setTimeout(() => setShowVerifiedPopup(false), 4000);
+    // Popup stays open until user clicks Submit
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    await doSubmitForm();
+  };
+
+  const handleSubmitFromPopup = async () => {
+    setShowVerifiedPopup(false);
+    await doSubmitForm();
+  };
+
+  const doSubmitForm = async () => {
+    if (!writeEnabled) {
+      setErrorMessage('Submissions are currently disabled.');
+      setSubmitStatus('error');
+      return;
+    }
     if (!isVerified) {
       setErrorMessage('Please verify your proof of volunteering image before submitting');
       setSubmitStatus('error');
       return;
     }
-    
-    // For existing members, require selection from the list (prevents submitting others' hours)
+
+    // For existing members, require selection from the list
     if (!isNewMember && !selectedMember) {
       setErrorMessage('Please select your name from the list. If you\'re a new member, click "New Member" above.');
       setSubmitStatus('error');
       return;
     }
-    
+
     // For new members, check if name already exists (prevent duplicates)
     if (isNewMember && formData.name) {
       const nameExists = existingMembers.some(
@@ -747,6 +762,7 @@ export function SubmitHoursPage() {
             onComplete={() => {
               setShowCelebration(false);
               setCelebrationStats(null);
+              navigate('/hours-tracker');
             }}
             darkMode={darkMode}
             submittedName={submittedName}
@@ -777,7 +793,7 @@ export function SubmitHoursPage() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.8, opacity: 0, y: -20 }}
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              className={`relative z-10 p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4 ${
+              className={`relative z-10 p-8 rounded-2xl shadow-2xl text-center max-w-sm w-full mx-4 ${
                 darkMode 
                   ? 'bg-gradient-to-b from-gray-800 to-gray-900 border border-emerald-500/30' 
                   : 'bg-white border border-emerald-200'
@@ -806,10 +822,44 @@ export function SubmitHoursPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}
+                className={`text-sm mb-6 break-words ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}
               >
                 {verifyPopupReasoning}
               </motion.p>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="flex flex-col gap-3"
+              >
+                <button
+                  onClick={handleSubmitFromPopup}
+                  disabled={isSubmitting}
+                  className="w-full py-3 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Submit Hours
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowVerifiedPopup(false)}
+                  className={`w-full py-2 rounded-xl text-sm font-medium transition-colors ${
+                    darkMode
+                      ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  Cancel
+                </button>
+              </motion.div>
             </motion.div>
           </motion.div>
         )}
@@ -1632,50 +1682,31 @@ export function SubmitHoursPage() {
                       </div>
 
                       {/* Verify Button */}
-                      {!isVerified && (
-                        <button
-                          type="button"
-                          onClick={handleVerifyImage}
-                          disabled={isVerifying}
-                          className={`w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${
-                            isVerifying
-                              ? 'bg-gray-400 text-white cursor-not-allowed'
-                              : darkMode
-                              ? 'bg-blue-600 text-white hover:bg-blue-700'
-                              : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
-                          }`}
-                        >
-                          {isVerifying ? (
-                            <>
-                              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                              Verifying Image...
-                            </>
-                          ) : (
-                            <>
-                              <Shield className="w-5 h-5" />
-                              Verify Proof
-                            </>
-                          )}
-                        </button>
-                      )}
-
-                      {/* Verified inline indicator */}
-                      {isVerified && verificationResult?.isValid && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className={`p-3 rounded-xl flex items-center justify-center gap-2 ${
-                            darkMode 
-                              ? 'bg-emerald-900/30 border border-emerald-500/30' 
-                              : 'bg-emerald-50 border border-emerald-200'
-                          }`}
-                        >
-                          <CheckCircle className={`w-5 h-5 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                          <p className={`font-semibold ${darkMode ? 'text-emerald-400' : 'text-emerald-800'}`}>
-                            ✓ Verified — Ready to Submit
-                          </p>
-                        </motion.div>
-                      )}
+                      {/* Verify & Submit combined button */}
+                      <button
+                        type="button"
+                        onClick={handleVerifyImage}
+                        disabled={isVerifying || !sentenceFrameFilled}
+                        className={`w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${
+                          isVerifying || !sentenceFrameFilled
+                            ? 'bg-gray-400 text-white cursor-not-allowed'
+                            : darkMode
+                            ? 'bg-blue-600 text-white hover:bg-blue-700'
+                            : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
+                        }`}
+                      >
+                        {isVerifying ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Verifying...
+                          </>
+                        ) : (
+                          <>
+                            <Shield className="w-5 h-5" />
+                            Verify &amp; Submit
+                          </>
+                        )}
+                      </button>
 
                     </div>
                   )}
@@ -1723,33 +1754,6 @@ export function SubmitHoursPage() {
                   )}
                 </AnimatePresence>
 
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !writeEnabled || !isVerified}
-                  className={`w-full py-4 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all ${
-                    isSubmitting || !writeEnabled || !isVerified
-                      ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl active:scale-[0.98]'
-                  }`}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Submitting...
-                    </>
-                  ) : !isVerified ? (
-                    <>
-                      <Shield className="w-5 h-5" />
-                      Verify Proof First
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-5 h-5" />
-                      Submit Hours
-                    </>
-                  )}
-                </button>
                   </>
                 )}
               </form>
