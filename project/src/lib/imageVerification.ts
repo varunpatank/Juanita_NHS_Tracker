@@ -13,28 +13,26 @@ export interface ImageVerificationResult {
  * Moderately strict: must actually match, but allows legit proof types.
  */
 function buildPrompt(description: string): string {
-  return `You verify NHS volunteer hour photo submissions. Be LENIENT — give students the benefit of the doubt.
+  return `You verify NHS volunteer hour photo submissions.
 
 Student's description: "${description}"
 
-Your job is simple: does this image plausibly relate to the described volunteer activity? It does NOT need to be a perfect match.
+Does this image match the description? That is the ONLY question.
 
-APPROVE if there is any reasonable connection between the image and description:
-- Any photo taken at or near the described location/event, even if indirect
-- Sign-in sheet, attendance log, or roster (doesn't need to perfectly match every detail)
-- Any letter, note, email, certificate, or screenshot mentioning volunteer work
-- A signature, handwritten note, or message from someone confirming the student did something
-- A photo of the student, a group, a workspace, materials, or an environment consistent with the type of activity described
-- Screenshots of texts, emails, or messages related to volunteering
-- If the description says "helped clean up park" and the image shows outdoor cleanup supplies or a park, APPROVE
+APPROVE (isValid: true) if:
+- The image shows anything that could plausibly relate to the described activity
+- Do NOT consider whether it looks like a stock photo, AI image, or professional photo — that does NOT matter
+- Do NOT reject based on image quality, style, or origin
+- Signatures, handwritten notes, emails, texts, certificates, sign-in sheets, or any document referencing volunteer work = APPROVE
+- A photo of people, a place, materials, or an environment consistent with the activity = APPROVE
+- If there is any reasonable way the image connects to the description, APPROVE
 
-REJECT ONLY if:
-- The image is completely, obviously unrelated with no possible connection (e.g. a meme, random celebrity photo, blank image, explicit content)
-- The image clearly shows a specific different activity that contradicts the description entirely
+REJECT (isValid: false) ONLY if:
+- The image is completely unrelated with zero possible connection to the description (e.g. a meme, a blank image, a random celebrity with no context)
 
-When in doubt, APPROVE. Students deserve good faith.
+Default to APPROVE. Only reject if it is absolutely obvious the image has nothing to do with the description.
 
-Respond ONLY as JSON: {"isValid": true/false, "reasoning": "brief explanation", "suggestions": []}`;
+Respond ONLY as JSON: {"isValid": true/false, "reasoning": "one sentence explanation", "suggestions": []}`;
 }
 
 /**
