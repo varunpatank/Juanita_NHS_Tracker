@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type SyntheticEvent } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -8,11 +8,12 @@ import {
   Users, 
   ExternalLink,
   Filter,
-  X
+  X,
 } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useDarkMode } from '../lib/darkModeContext';
+import { PageHero } from '../components/PageHero';
 
 // Fix Leaflet default markers
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -661,7 +662,19 @@ export function VolunteeringPage() {
   const [opportunities] = useState<VolunteerOpportunity[]>(mockOpportunities);
   const [selectedOpportunity, setSelectedOpportunity] = useState<VolunteerOpportunity | null>(null);
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
+  const [filterSponsored, setFilterSponsored] = useState<boolean | null>(null);
+  const [sortByDate, setSortByDate] = useState(false);
+  const [mapInteractive, setMapInteractive] = useState(false);
   const [loading] = useState(false);
+
+  const fallbackOpportunityImage = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&auto=format&fit=crop';
+
+  const handleImageError = (e: SyntheticEvent<HTMLImageElement>) => {
+    const target = e.currentTarget;
+    if (target.dataset.fallbackApplied === 'true') return;
+    target.dataset.fallbackApplied = 'true';
+    target.src = fallbackOpportunityImage;
+  };
 
   const categories = [
     { id: 'food', label: 'Food' },
@@ -674,9 +687,16 @@ export function VolunteeringPage() {
     { id: 'arts', label: 'Arts' },
   ];
 
-  const filteredOpportunities = filterCategory
-    ? opportunities.filter(opp => opp.category === filterCategory)
-    : opportunities;
+  const filteredOpportunities = opportunities
+    .filter(opp => {
+      const categoryMatch = !filterCategory || opp.category === filterCategory;
+      const sponsoredMatch = filterSponsored === null || opp.is_chapter_sponsored === filterSponsored;
+      return categoryMatch && sponsoredMatch;
+    })
+    .sort((a, b) => {
+      if (sortByDate) return new Date(a.date).getTime() - new Date(b.date).getTime();
+      return 0;
+    });
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
@@ -716,151 +736,254 @@ export function VolunteeringPage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-900 to-red-600 text-white py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <div className="relative max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center"
-          >
-            <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl backdrop-blur-sm">
-              <img 
-                src="https://upload.wikimedia.org/wikipedia/en/5/52/Juanita_High_School_Crest.png"
-                alt="Juanita High School"
-                className="w-12 h-12 object-contain"
-              />
-            </div>
-            <h1 className="text-3xl lg:text-4xl font-bold mb-4">
-              Service Opportunities
-            </h1>
-            <p className="text-xl text-blue-100 max-w-2xl mx-auto">
-              Discover meaningful ways to serve your community and make a lasting impact. 
-              Every act of service strengthens the bonds that unite us all.
-            </p>
-          </motion.div>
-        </div>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
+        <PageHero
+          title="Opportunities"
+          subtitle="Discover meaningful ways to serve your community and make a lasting impact across Juanita and beyond."
+          className="min-h-[360px] sm:min-h-[430px] flex items-center"
+          contentClassName="-translate-y-3"
+        />
+      </motion.div>
 
       {/* Filters */}
-      <div className={`backdrop-blur-sm border-b py-4 px-4 sm:px-6 lg:px-8 ${
+      <div className={`backdrop-blur-sm border-b py-3 px-4 sm:px-6 lg:px-8 ${
         darkMode 
           ? 'bg-gray-900/95 border-gray-700' 
           : 'bg-white/95 border-gray-200'
       }`}>
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Filter className={`w-5 h-5 ${darkMode ? 'text-blue-400' : 'text-blue-900'}`} />
-            <span className={`font-semibold text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Category:</span>
-          </div>
-          
-          {categories.map(({ id, label }) => (
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-nowrap items-center gap-2 overflow-x-auto scrollbar-none pb-1">
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Filter className={`w-4 h-4 ${darkMode ? 'text-blue-400' : 'text-blue-900'}`} />
+              <span className={`font-semibold text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Filters:</span>
+            </div>
+            
+            {categories.map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => setFilterCategory(filterCategory === id ? null : id)}
+                className={`px-3 py-1.5 border rounded-lg text-xs font-medium transition-all duration-200 shrink-0 ${
+                  filterCategory === id
+                    ? 'border-blue-500 text-white'
+                    : darkMode
+                      ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
+                      : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                }`}
+                style={filterCategory === id ? { backgroundColor: getCategoryColor(id), borderColor: getCategoryColor(id) } : {}}
+              >
+                {label}
+              </button>
+            ))}
+
+            {filterCategory && (
+              <button
+                onClick={() => setFilterCategory(null)}
+                className={`text-xs flex items-center px-2 py-1.5 rounded-lg transition-colors shrink-0 ${
+                  darkMode 
+                    ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <X className="w-3 h-3 mr-1" />
+                Clear
+              </button>
+            )}
+
+            {/* Chapter sponsored filter */}
             <button
-              key={id}
-              onClick={() => setFilterCategory(filterCategory === id ? null : id)}
-              className={`px-4 py-2 border rounded-lg text-sm font-medium transition-all duration-200 ${
-                filterCategory === id
-                  ? 'border-blue-500 text-white'
+              onClick={() => setFilterSponsored(filterSponsored === true ? null : true)}
+              className={`px-3 py-1.5 border rounded-lg text-xs font-medium transition-all shrink-0 ${
+                filterSponsored === true
+                  ? 'bg-blue-900 border-blue-900 text-white'
                   : darkMode
-                    ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
-                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                  ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
+                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
-              style={filterCategory === id ? { backgroundColor: getCategoryColor(id), borderColor: getCategoryColor(id) } : {}}
             >
-              {label}
+              ★ Chapter Sponsored
             </button>
-          ))}
-          
-          {filterCategory && (
             <button
-              onClick={() => setFilterCategory(null)}
-              className={`text-sm flex items-center px-3 py-1.5 rounded-lg transition-colors ${
-                darkMode 
-                  ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              onClick={() => setFilterSponsored(filterSponsored === false ? null : false)}
+              className={`px-3 py-1.5 border rounded-lg text-xs font-medium transition-all shrink-0 ${
+                filterSponsored === false
+                  ? 'bg-gray-700 border-gray-500 text-white'
+                  : darkMode
+                  ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
+                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
-              <X className="w-3.5 h-3.5 mr-1" />
-              Clear
+              Other Hours
             </button>
-          )}
+
+            {/* Sort by date */}
+            <button
+              onClick={() => setSortByDate(!sortByDate)}
+              className={`px-3 py-1.5 border rounded-lg text-xs font-medium transition-all flex items-center gap-1 shrink-0 ${
+                sortByDate
+                  ? 'bg-emerald-600 border-emerald-600 text-white'
+                  : darkMode
+                  ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
+                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <Calendar className="w-3 h-3" />
+              Sort by Date
+            </button>
+
+          </div>
         </div>
       </div>
 
-      {/* Map */}
-      <div className="h-screen w-full relative">
-        {loading ? (
-          <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-16 h-16 border-4 border-blue-900 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600 font-medium">Loading opportunities...</p>
+      {/* Split View: Half Map + Half List */}
+      <div className={`px-4 sm:px-6 lg:px-8 py-6 ${darkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>
+        <div className="max-w-7xl mx-auto">
+          <p className={`text-sm mb-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+            {filteredOpportunities.length} opportunities {sortByDate ? '(sorted by date)' : ''}
+          </p>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Left: Map */}
+            <div className={`relative rounded-2xl overflow-hidden border ${
+              darkMode ? 'border-gray-700 bg-gray-900' : 'border-gray-200 bg-white'
+            } h-[55vw] min-h-[280px] sm:h-[480px] lg:h-[calc(100vh-220px)]`}>
+              {loading ? (
+                <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-blue-900 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-600 font-medium">Loading opportunities...</p>
+                  </div>
+                </div>
+              ) : (
+                <MapContainer
+                  center={[47.7211, -122.2054]}
+                  zoom={11}
+                  className="h-full w-full"
+                  scrollWheelZoom={mapInteractive}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <MapController selectedOpportunity={selectedOpportunity} />
+
+                  {filteredOpportunities.map((opportunity) => (
+                    <Marker
+                      key={opportunity.id}
+                      position={[opportunity.latitude, opportunity.longitude]}
+                      icon={createCustomIcon(opportunity.category)}
+                    >
+                      <Popup>
+                        <div className="p-2 min-w-[280px]">
+                          <img
+                            src={opportunity.image}
+                            onError={handleImageError}
+                            alt={opportunity.title}
+                            className="w-full h-32 object-cover rounded-lg mb-3"
+                          />
+                          <h3 className="font-bold text-gray-800 mb-2 text-base">{opportunity.title}</h3>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex items-center text-gray-600">
+                              <MapPin className="w-3 h-3 mr-2 text-blue-900 flex-shrink-0" />
+                              <span className="text-xs">{opportunity.location}</span>
+                            </div>
+                            <div className="flex items-center text-gray-600">
+                              <Calendar className="w-3 h-3 mr-2 text-blue-900" />
+                              {new Date(opportunity.date).toLocaleDateString()}
+                            </div>
+                            <div className="flex items-center text-gray-600">
+                              <Clock className="w-3 h-3 mr-2 text-blue-900" />
+                              {opportunity.time}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => setSelectedOpportunity(opportunity)}
+                            className="w-full mt-3 py-2 bg-gradient-to-r from-blue-900 to-red-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg transition-all"
+                          >
+                            View Details
+                          </button>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  ))}
+                </MapContainer>
+              )}
+
+              {!mapInteractive && !loading && (
+                <div
+                  className="absolute inset-0 z-[400] flex items-center justify-center cursor-pointer"
+                  style={{ background: 'rgba(0,0,0,0.18)' }}
+                  onClick={() => setMapInteractive(true)}
+                >
+                  <div className={`px-5 py-3 rounded-2xl text-sm font-semibold shadow-lg backdrop-blur-sm pointer-events-none ${
+                    darkMode ? 'bg-gray-900/90 text-white border border-gray-700' : 'bg-white/90 text-gray-800 border border-gray-200'
+                  }`}>
+                    Click to interact with map
+                  </div>
+                </div>
+              )}
+
+              <div className={`absolute bottom-4 left-4 p-3 rounded-xl shadow-lg z-[500] ${
+                darkMode ? 'bg-gray-900/95 border border-gray-700' : 'bg-white/95 border border-gray-200'
+              } backdrop-blur-sm`}>
+                <h4 className={`font-bold text-xs mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Categories</h4>
+                <div className="space-y-1.5 text-xs">
+                  {categories.map(({ id, label }) => (
+                    <div key={id} className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: getCategoryColor(id) }} />
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
-        ) : (
-          <MapContainer
-            center={[47.7211, -122.2054]}
-            zoom={11}
-            className="h-full w-full"
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <MapController selectedOpportunity={selectedOpportunity} />
-            
-            {filteredOpportunities.map((opportunity) => (
-              <Marker
-                key={opportunity.id}
-                position={[opportunity.latitude, opportunity.longitude]}
-                icon={createCustomIcon(opportunity.category)}
-              >
-                <Popup>
-                  <div className="p-2 min-w-[280px]">
-                    <img 
-                      src={opportunity.image} 
-                      alt={opportunity.title}
-                      className="w-full h-32 object-cover rounded-lg mb-3"
+
+            {/* Right: List */}
+            <div className={`h-[55vw] min-h-[280px] sm:h-[480px] lg:h-[calc(100vh-220px)] overflow-y-auto pr-1 space-y-4`}>
+              {filteredOpportunities.map(opp => (
+                <motion.div
+                  key={opp.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`rounded-2xl border overflow-hidden cursor-pointer transition-all hover:shadow-lg ${
+                    darkMode ? 'bg-gray-800/60 border-gray-700 hover:border-gray-500' : 'bg-white border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => setSelectedOpportunity(opp)}
+                >
+                  <div className="h-36 overflow-hidden relative">
+                    <img
+                      src={opp.image}
+                      onError={handleImageError}
+                      alt={opp.title}
+                      loading="lazy"
+                      className="w-full h-full object-cover"
                     />
-                    <h3 className="font-bold text-gray-800 mb-2 text-base">{opportunity.title}</h3>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex items-center text-gray-600">
-                        <MapPin className="w-3 h-3 mr-2 text-blue-900 flex-shrink-0" />
-                        <span className="text-xs">{opportunity.location}</span>
+                  </div>
+                  <div className="p-4">
+                    <h3 className={`font-bold text-sm mb-2 line-clamp-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {opp.title}
+                    </h3>
+                    <div className="space-y-1">
+                      <div className={`flex items-center gap-1.5 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                        {new Date(opp.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · {opp.time}
                       </div>
-                      <div className="flex items-center text-gray-600">
-                        <Calendar className="w-3 h-3 mr-2 text-blue-900" />
-                        {new Date(opportunity.date).toLocaleDateString()}
+                      <div className={`flex items-center gap-1.5 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                        {opp.hours_estimate}
                       </div>
-                      <div className="flex items-center text-gray-600">
-                        <Clock className="w-3 h-3 mr-2 text-blue-900" />
-                        {opportunity.time}
+                      <div className={`flex items-center gap-1.5 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="truncate">{opp.location.split(',').slice(-2).join(',').trim()}</span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setSelectedOpportunity(opportunity)}
-                      className="w-full mt-3 py-2 bg-gradient-to-r from-blue-900 to-red-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg transition-all"
-                    >
-                      View Details
-                    </button>
                   </div>
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
-        )}
-        
-        {/* Floating Legend */}
-        <div className={`absolute bottom-6 left-6 p-4 rounded-xl shadow-lg z-[500] ${
-          darkMode ? 'bg-gray-900/95 border border-gray-700' : 'bg-white/95 border border-gray-200'
-        } backdrop-blur-sm`}>
-          <h4 className={`font-bold text-xs mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Categories</h4>
-          <div className="space-y-1.5 text-xs">
-            {categories.map(({ id, label }) => (
-              <div key={id} className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: getCategoryColor(id) }} />
-                <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{label}</span>
-              </div>
-            ))}
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -888,6 +1011,7 @@ export function VolunteeringPage() {
               <div className="relative h-56 sm:h-72 overflow-hidden rounded-t-2xl">
                 <img 
                   src={selectedOpportunity.image} 
+                  onError={handleImageError}
                   alt={selectedOpportunity.title}
                   className="w-full h-full object-cover"
                 />

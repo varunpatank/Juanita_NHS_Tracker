@@ -4,6 +4,7 @@ import { HomePage } from './pages/HomePage';
 import { SubmitHoursPage } from './pages/SubmitHoursPage';
 import { VolunteeringPage } from './pages/VolunteeringPage';
 import { HoursTrackerPage } from './pages/HoursTrackerPage';
+import { MyHoursPage } from './pages/MyHoursPage';
 import { Footer } from './components/Footer';
 import { DarkModeProvider, useDarkMode } from './lib/darkModeContext';
 import { Component, ErrorInfo, ReactNode } from 'react';
@@ -89,6 +90,7 @@ function AppContent() {
           <Route path="/" element={<HomePage />} />
           <Route path="/submit-hours" element={<SubmitHoursPage />} />
           <Route path="/hours-tracker" element={<HoursTrackerPage />} />
+          <Route path="/my-hours" element={<MyHoursPage />} />
           <Route path="/volunteering" element={<VolunteeringPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

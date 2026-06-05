@@ -82,7 +82,7 @@ export function HomePage() {
             className="text-center"
           >
             {/* Logos */}
-            <div className="flex justify-center items-center space-x-6 mb-8">
+            <div className="flex justify-center items-center space-x-4 sm:space-x-6 mb-6 sm:mb-8">
               <motion.div 
                 className="relative"
                 animate={{ rotate: [0, 3, -3, 0] }}
@@ -91,10 +91,10 @@ export function HomePage() {
                 <img 
                   src="https://resources.finalsite.net/images/f_auto,q_auto/v1605026389/lwsdorg/azffuqvgwggxboecskaw/nhs_logo_smaller.jpg"
                   alt="NHS Logo"
-                  className="w-24 h-24 object-contain rounded-2xl shadow-2xl shadow-blue-500/25"
+                  className="w-16 h-16 sm:w-24 sm:h-24 object-contain rounded-2xl shadow-2xl shadow-blue-500/25"
                 />
               </motion.div>
-              <div className={`w-1 h-12 rounded-full bg-gradient-to-b ${
+              <div className={`w-1 h-10 sm:h-12 rounded-full bg-gradient-to-b ${
                 darkMode ? 'from-blue-500 to-red-500' : 'from-blue-900 to-red-600'
               }`} />
               <motion.div 
@@ -102,18 +102,18 @@ export function HomePage() {
                 animate={{ rotate: [0, -3, 3, 0] }}
                 transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 3 }}
               >
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-600 to-red-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/25">
+                <div className="w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-br from-blue-600 to-red-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/25">
                   <img 
                     src="https://upload.wikimedia.org/wikipedia/en/5/52/Juanita_High_School_Crest.png"
                     alt="Juanita High School"
-                    className="w-16 h-16 object-contain"
+                    className="w-11 h-11 sm:w-16 sm:h-16 object-contain"
                   />
                 </div>
               </motion.div>
             </div>
             
             <motion.h1 
-              className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6"
+              className="text-3xl sm:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
@@ -128,7 +128,7 @@ export function HomePage() {
             </motion.h1>
             
             <motion.p 
-              className={`text-xl mb-10 max-w-3xl mx-auto leading-relaxed ${
+              className={`text-base sm:text-xl mb-8 max-w-3xl mx-auto leading-relaxed ${
                 darkMode ? 'text-gray-400' : 'text-gray-700'
               }`}
               initial={{ opacity: 0, y: 20 }}

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, CheckCircle, AlertCircle, Trophy, ArrowRight, Clock, Users, Award, BookOpen, UserPlus, Upload, Shield, Sparkles, PartyPopper } from 'lucide-react';
+import { Send, CheckCircle, AlertCircle, Trophy, ArrowRight, Clock, Users, Award, BookOpen, UserPlus, Upload, Sparkles, PartyPopper } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDarkMode } from '../lib/darkModeContext';
 import { submitHours, isWriteEnabled, fetchMembers, type HoursSubmission, type MemberHours } from '../lib/googleSheets';
 import { validateImageFile, type ImageVerificationResult, verifyImage } from '../lib/imageVerification';
+import { PageHero } from '../components/PageHero';
 
 
 // Confetti particle component
@@ -340,6 +341,7 @@ export function SubmitHoursPage() {
   
   // Image verification states
   const [proofImage, setProofImage] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [adminCode, setAdminCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -347,22 +349,27 @@ export function SubmitHoursPage() {
   const [showVerifiedPopup, setShowVerifiedPopup] = useState(false);
   const [showFailedPopup, setShowFailedPopup] = useState(false);
   const [verifyPopupReasoning, setVerifyPopupReasoning] = useState('');
-  const [verifyConfetti, setVerifyConfetti] = useState<Array<{ id: number; delay: number; x: number }>>([]);
+  const [verifyConfetti] = useState<Array<{ id: number; delay: number; x: number }>>([]);
 
   // Sentence frame fields for structured description
   const [sfOrganization, setSfOrganization] = useState('');
   const [sfActivity, setSfActivity] = useState('');
   const [sfDate, setSfDate] = useState('');
-  const [sfLocation, setSfLocation] = useState('');
   const [sfPhotoShows, setSfPhotoShows] = useState('');
+  const [sfSupervisor, setSfSupervisor] = useState('');
+  const [sfSupervisorContact, setSfSupervisorContact] = useState('');
+
+  // Current hours for selected existing member
+  const [selectedMemberCurrentHours, setSelectedMemberCurrentHours] = useState<MemberHours | null>(null);
 
   // Build the full activity description from the sentence frame
   const activityDescription = [
     sfOrganization && `I volunteered with ${sfOrganization}`,
     sfActivity && `where I ${sfActivity}`,
     sfDate && `on ${sfDate}`,
-    sfLocation && `at ${sfLocation}`,
     sfPhotoShows && `My photo shows ${sfPhotoShows}`,
+    sfSupervisor && `Supervisor: ${sfSupervisor}`,
+    sfSupervisorContact && `Supervisor contact: ${sfSupervisorContact}`,
   ].filter(Boolean).join(', ') + '.';
 
   const sentenceFrameFilled = sfOrganization.trim().length > 0 && sfActivity.trim().length > 0 && sfPhotoShows.trim().length > 0;
@@ -371,8 +378,9 @@ export function SubmitHoursPage() {
     setSfOrganization('');
     setSfActivity('');
     setSfDate('');
-    setSfLocation('');
     setSfPhotoShows('');
+    setSfSupervisor('');
+    setSfSupervisorContact('');
   };
 
   const [isVerified, setIsVerified] = useState(false);
@@ -410,6 +418,7 @@ export function SubmitHoursPage() {
     if (memberName) {
       const member = existingMembers.find(m => m.name === memberName);
       if (member) {
+        setSelectedMemberCurrentHours(member);
         setFormData({
           name: member.name,
           grade: member.grade,
@@ -420,6 +429,7 @@ export function SubmitHoursPage() {
         });
       }
     } else {
+      setSelectedMemberCurrentHours(null);
       setFormData({
         name: '',
         grade: '',
@@ -467,30 +477,32 @@ export function SubmitHoursPage() {
     }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file
+  const processImageFile = (file: File) => {
     const validation = validateImageFile(file);
     if (!validation.valid) {
       setErrorMessage(validation.error || 'Invalid image file');
       setSubmitStatus('error');
       return;
     }
-
-    // Set image and create preview
     setProofImage(file);
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-    };
+    reader.onloadend = () => setImagePreview(reader.result as string);
     reader.readAsDataURL(file);
-
-    // Reset verification when new image is uploaded
     setIsVerified(false);
     setVerificationResult(null);
     setSubmitStatus('idle');
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processImageFile(file);
+  };
+
+  const handleImageDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processImageFile(file);
   };
 
 
@@ -500,8 +512,7 @@ export function SubmitHoursPage() {
     if (adminCode === '1060801') {
       setIsVerified(true);
       setVerificationResult({ isValid: true });
-      setVerifyPopupReasoning('Admin override — submission approved.');
-      setShowVerifiedPopup(true);
+      await doSubmitForm(true);
       return;
     }
 
@@ -550,16 +561,8 @@ export function SubmitHoursPage() {
     setErrorMessage('');
     setIsVerifying(false);
 
-    // Show success popup with confetti
-    setVerifyPopupReasoning(reason);
-    const particles = Array.from({ length: 80 }, (_, i) => ({
-      id: i,
-      delay: Math.random() * 0.4,
-      x: Math.random() * window.innerWidth
-    }));
-    setVerifyConfetti(particles);
-    setShowVerifiedPopup(true);
-    // Popup stays open until user clicks Submit
+    // Auto-submit immediately after verification passes
+    await doSubmitForm(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -572,13 +575,13 @@ export function SubmitHoursPage() {
     await doSubmitForm();
   };
 
-  const doSubmitForm = async () => {
+  const doSubmitForm = async (alreadyVerified = false) => {
     if (!writeEnabled) {
       setErrorMessage('Submissions are currently disabled.');
       setSubmitStatus('error');
       return;
     }
-    if (!isVerified) {
+    if (!alreadyVerified && !isVerified) {
       setErrorMessage('Please verify your proof of volunteering image before submitting');
       setSubmitStatus('error');
       return;
@@ -702,6 +705,7 @@ export function SubmitHoursPage() {
       setNameSearchQuery('');
       setHasSearched(false);
       setHasMadeChoice(false);
+      setSelectedMemberCurrentHours(null);
     } catch (error) {
       console.error('Error submitting:', error);
       setErrorMessage(error instanceof Error ? error.message : 'Failed to submit hours');
@@ -915,6 +919,18 @@ export function SubmitHoursPage() {
               >
                 {verifyPopupReasoning}
               </motion.p>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45 }}
+                className={`mt-3 p-3 rounded-xl text-xs ${
+                  darkMode ? 'bg-amber-900/20 border border-amber-500/20 text-amber-300' : 'bg-amber-50 border border-amber-200 text-amber-800'
+                }`}
+              >
+                <strong>No photo or still not approved?</strong> Email{' '}
+                <a href="mailto:1060801@lwsd.org" className="font-bold underline">1060801@lwsd.org</a>{' '}
+                and you will receive an override code you can enter instead.
+              </motion.div>
               <motion.button
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -934,40 +950,36 @@ export function SubmitHoursPage() {
         )}
       </AnimatePresence>
 
-      <div className={`min-h-screen py-12 px-4 sm:px-6 lg:px-8 ${
+      <div className={`min-h-screen ${
         darkMode 
           ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950' 
           : 'bg-gray-50'
       }`}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        >
+          <PageHero
+            title="Submit Hours"
+            subtitle="Log your volunteer hours and track your progress toward NHS requirements."
+            className="mb-8"
+          />
+        </motion.div>
+
+        <div className="px-4 pb-8 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="text-center mb-12"
-          >
-            <h1 className={`text-4xl lg:text-5xl font-bold mb-4 ${
-              darkMode ? 'text-white' : 'text-gray-900'
-            }`}>
-              Submit Service Hours
-            </h1>
-            <p className={`text-lg max-w-2xl mx-auto ${
-              darkMode ? 'text-gray-400' : 'text-gray-600'
-            }`}>
-              Log your volunteer hours and track your progress toward NHS requirements
-            </p>
-          </motion.div>
 
           {/* Main Content - Two Column Layout */}
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+          <div className="grid items-stretch lg:grid-cols-2 gap-6 lg:gap-8">
             {/* Left Side - Form */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+              className="flex h-full flex-col gap-4"
             >
-              <div className={`rounded-3xl border p-8 ${
+              <div className={`flex-1 rounded-3xl border p-5 lg:p-6 ${
                 darkMode 
                   ? 'bg-gray-900/80 border-gray-800' 
                   : 'bg-white border-gray-200 shadow-sm'
@@ -1000,17 +1012,17 @@ export function SubmitHoursPage() {
                 </motion.div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Initial Question - Have you submitted before? */}
                 {!hasMadeChoice ? (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="py-8"
+                    className="py-6"
                   >
                     {/* Centered Title */}
-                    <div className="text-center mb-10">
-                      <h2 className={`text-3xl lg:text-4xl font-bold mb-3 ${
+                    <div className="text-center mb-8">
+                      <h2 className={`text-2xl lg:text-3xl font-bold mb-3 ${
                         darkMode ? 'text-white' : 'text-gray-900'
                       }`}>
                         Have You Submitted Hours On This Website Before?
@@ -1032,7 +1044,7 @@ export function SubmitHoursPage() {
                           setHasSearched(false);
                           setFormData({ name: '', grade: '', summerHours: '', chapterHours: '', otherHours: '', inducted: '' });
                         }}
-                        className={`w-full p-5 rounded-2xl border-2 transition-all duration-200 text-left group hover:scale-[1.01] ${
+                        className={`w-full p-4 rounded-2xl border-2 transition-all duration-200 text-left group hover:scale-[1.01] ${
                           darkMode 
                             ? 'bg-blue-950/50 border-blue-500/40 hover:border-blue-400 hover:bg-blue-900/50' 
                             : 'bg-blue-50/80 border-blue-300 hover:border-blue-500 hover:bg-blue-100 hover:shadow-lg hover:shadow-blue-200/50'
@@ -1043,7 +1055,7 @@ export function SubmitHoursPage() {
                             <CheckCircle className="w-7 h-7 text-white" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className={`font-bold text-xl ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                            <h4 className={`font-bold text-lg ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                               I've Submitted On This Site Before
                             </h4>
                             <p className={`text-sm mt-1 ${darkMode ? 'text-blue-300' : 'text-blue-600'}`}>
@@ -1069,28 +1081,28 @@ export function SubmitHoursPage() {
                           setHasSearched(false);
                           setFormData({ name: '', grade: '', summerHours: '', chapterHours: '', otherHours: '', inducted: '' });
                         }}
-                        className={`w-full p-5 rounded-2xl border-2 transition-all duration-200 text-left group hover:scale-[1.01] ${
+                        className={`w-full p-4 rounded-2xl border-2 transition-all duration-200 text-left group hover:scale-[1.01] ${
                           darkMode 
-                            ? 'bg-red-950/50 border-red-500/40 hover:border-red-400 hover:bg-red-900/50' 
-                            : 'bg-red-50/80 border-red-300 hover:border-red-500 hover:bg-red-100 hover:shadow-lg hover:shadow-red-200/50'
+                            ? 'bg-teal-950/50 border-teal-500/40 hover:border-teal-400 hover:bg-teal-900/50' 
+                            : 'bg-teal-50/80 border-teal-300 hover:border-teal-500 hover:bg-teal-100 hover:shadow-lg hover:shadow-teal-200/50'
                         }`}
                       >
                         <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-red-500 to-red-600 shadow-lg shadow-red-500/40">
+                          <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-teal-500 to-teal-600 shadow-lg shadow-teal-500/40">
                             <UserPlus className="w-7 h-7 text-white" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className={`font-bold text-xl ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                            <h4 className={`font-bold text-lg ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                               New to This Site
                             </h4>
-                            <p className={`text-sm mt-1 ${darkMode ? 'text-red-300' : 'text-red-600'}`}>
+                            <p className={`text-sm mt-1 ${darkMode ? 'text-teal-300' : 'text-teal-600'}`}>
                               I've never submitted hours on this website before
                             </p>
                           </div>
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all group-hover:translate-x-1 ${
-                            darkMode ? 'bg-red-500/30' : 'bg-red-200'
+                            darkMode ? 'bg-teal-500/30' : 'bg-teal-200'
                           }`}>
-                            <ArrowRight className={`w-5 h-5 ${darkMode ? 'text-red-300' : 'text-red-600'}`} />
+                            <ArrowRight className={`w-5 h-5 ${darkMode ? 'text-teal-300' : 'text-teal-600'}`} />
                           </div>
                         </div>
                       </button>
@@ -1112,6 +1124,7 @@ export function SubmitHoursPage() {
                         setProofImage(null);
                         setImagePreview(null);
                         resetSentenceFrame();
+                        setSelectedMemberCurrentHours(null);
                       }}
                       className={`mb-4 text-sm flex items-center gap-1 transition-colors ${
                         darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'
@@ -1124,17 +1137,17 @@ export function SubmitHoursPage() {
                     {/* Header showing current mode */}
                     <div className={`p-3 rounded-xl mb-2 flex items-center gap-3 ${
                       isNewMember 
-                        ? darkMode ? 'bg-red-900/30 border border-red-500/30' : 'bg-red-50 border border-red-200'
+                        ? darkMode ? 'bg-teal-900/30 border border-teal-500/30' : 'bg-teal-50 border border-teal-200'
                         : darkMode ? 'bg-blue-900/30 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'
                     }`}>
                       {isNewMember ? (
-                        <UserPlus className={`w-5 h-5 ${darkMode ? 'text-red-400' : 'text-red-600'}`} />
+                        <UserPlus className={`w-5 h-5 ${darkMode ? 'text-teal-400' : 'text-teal-600'}`} />
                       ) : (
                         <Users className={`w-5 h-5 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
                       )}
                       <span className={`text-sm font-semibold ${
                         isNewMember 
-                          ? darkMode ? 'text-red-400' : 'text-red-700'
+                          ? darkMode ? 'text-teal-400' : 'text-teal-700'
                           : darkMode ? 'text-blue-400' : 'text-blue-700'
                       }`}>
                         {isNewMember ? 'Creating New Member Profile' : 'Finding Your Existing Record'}
@@ -1248,6 +1261,56 @@ export function SubmitHoursPage() {
                       <p className={`text-sm mt-2 text-green-500 flex items-center gap-1`}>
                         <CheckCircle className="w-4 h-4" /> Selected: <strong>{selectedMember}</strong>
                       </p>
+                    )}
+
+                    {/* Current hours panel for existing member */}
+                    {selectedMemberCurrentHours && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`mt-3 p-4 rounded-xl border ${
+                          darkMode ? 'bg-blue-900/20 border-blue-500/30' : 'bg-blue-50 border-blue-200'
+                        }`}
+                      >
+                        <p className={`text-xs font-bold uppercase tracking-wide mb-2 ${darkMode ? 'text-blue-400' : 'text-blue-700'}`}>
+                          Your Current Hours on Record
+                        </p>
+                        <div className="grid grid-cols-4 gap-2 mb-2">
+                          <div className="text-center">
+                            <p className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{selectedMemberCurrentHours.totalHours}</p>
+                            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Total</p>
+                          </div>
+                          <div className="text-center">
+                            <p className={`text-xl font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>{selectedMemberCurrentHours.summerHours}</p>
+                            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Summer</p>
+                          </div>
+                          <div className="text-center">
+                            <p className={`text-xl font-bold ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>{selectedMemberCurrentHours.chapterHours}</p>
+                            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Chapter</p>
+                          </div>
+                          <div className="text-center">
+                            <p className={`text-xl font-bold ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>{selectedMemberCurrentHours.otherHours}</p>
+                            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Other</p>
+                          </div>
+                        </div>
+                        <div className={`h-2 rounded-full overflow-hidden mb-2 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                          <div
+                            className="h-full rounded-full bg-blue-500"
+                            style={{ width: `${Math.min((selectedMemberCurrentHours.totalHours / 30) * 100, 100)}%` }}
+                          />
+                        </div>
+                        <p className={`text-xs text-center ${darkMode ? 'text-blue-300' : 'text-blue-600'}`}>
+                          {selectedMemberCurrentHours.totalHours >= 30
+                            ? '🎉 Year goal complete!'
+                            : selectedMemberCurrentHours.totalHours >= 10
+                            ? `${(30 - selectedMemberCurrentHours.totalHours).toFixed(1)} hrs until year goal (10-hr semester goal done ✓)`
+                            : `${(10 - selectedMemberCurrentHours.totalHours).toFixed(1)} hrs until 1st semester goal · ${(30 - selectedMemberCurrentHours.totalHours).toFixed(1)} hrs until year goal`
+                          }
+                        </p>
+                        <p className={`text-xs text-center mt-1 font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          Enter hours <em>to add</em> in the fields below
+                        </p>
+                      </motion.div>
                     )}
                     
                     {!selectedMember && !hasSearched && nameSearchQuery.length >= 2 && (
@@ -1510,20 +1573,35 @@ export function SubmitHoursPage() {
                 <div className={`p-6 rounded-xl border-2 border-dashed ${
                   darkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-300 bg-gray-50'
                 }`}>
-                  <label className={`block text-sm font-bold mb-3 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <label className={`block text-sm font-bold mb-1 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     Proof Of Volunteering <span className="text-red-500">*</span>
                   </label>
+                  <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                    Upload a photo from your event, or a screenshot of an email with an organizer/advisor confirming your participation. If your proof isn't approved by the AI, email{' '}
+                    <a href="mailto:1060801@lwsd.org" className={`font-semibold underline ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>1060801@lwsd.org</a>{' '}
+                    and you will receive an override code.
+                  </p>
                   
                   {/* File Upload */}
                   {!imagePreview ? (
-                    <label className={`flex flex-col items-center justify-center cursor-pointer py-8 px-4 rounded-lg transition-all ${
-                      darkMode 
-                        ? 'hover:bg-gray-700/50 border border-gray-700' 
-                        : 'hover:bg-gray-100 border border-gray-200'
-                    }`}>
-                      <Upload className={`w-12 h-12 mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                    <label
+                      className={`flex flex-col items-center justify-center cursor-pointer py-8 px-4 rounded-lg transition-all border-2 border-dashed ${
+                        isDragging
+                          ? darkMode
+                            ? 'bg-blue-900/30 border-blue-500'
+                            : 'bg-blue-50 border-blue-400'
+                          : darkMode
+                          ? 'hover:bg-gray-700/50 border-gray-700'
+                          : 'hover:bg-gray-100 border-gray-200'
+                      }`}
+                      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                      onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
+                      onDragLeave={() => setIsDragging(false)}
+                      onDrop={handleImageDrop}
+                    >
+                      <Upload className={`w-12 h-12 mb-3 ${isDragging ? 'text-blue-400' : darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                       <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                        Upload an image as proof
+                        {isDragging ? 'Drop image here' : 'Drag & drop or click to upload'}
                       </p>
                       <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                         JPG, PNG, or WebP (Max 5MB)
@@ -1619,14 +1697,33 @@ export function SubmitHoursPage() {
                           />
                         </div>
 
-                        {/* Location */}
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>at</span>
+                        {/* Photo description */}
+                        <div className="flex items-start gap-2 flex-wrap">
+                          <span className={`text-sm font-medium whitespace-nowrap mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>My photo/email shows</span>
                           <input
                             type="text"
-                            value={sfLocation}
-                            onChange={(e) => { setSfLocation(e.target.value); setIsVerified(false); setVerificationResult(null); }}
-                            placeholder="e.g. 11220 NE 132nd St, Kirkland"
+                            value={sfPhotoShows}
+                            onChange={(e) => { setSfPhotoShows(e.target.value); setIsVerified(false); setVerificationResult(null); }}
+                            placeholder="e.g. me at the food bank, or an email from an organizer confirming my volunteer shift"
+                            className={`flex-1 min-w-[160px] px-3 py-2 rounded-lg border text-sm transition-all ${
+                              darkMode
+                                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
+                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                            }`}
+                          />
+                        </div>
+                        <p className={`text-xs -mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          A photo at the event is ideal, but a screenshot of an email with an organizer/advisor confirming your participation is also accepted.
+                        </p>
+
+                        {/* Supervisor Name */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Supervisor name</span>
+                          <input
+                            type="text"
+                            value={sfSupervisor}
+                            onChange={(e) => setSfSupervisor(e.target.value)}
+                            placeholder="e.g. John Doe"
                             className={`flex-1 min-w-[160px] px-3 py-2 rounded-lg border text-sm transition-all ${
                               darkMode
                                 ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
@@ -1635,15 +1732,15 @@ export function SubmitHoursPage() {
                           />
                         </div>
 
-                        {/* Photo description */}
-                        <div className="flex items-start gap-2 flex-wrap">
-                          <span className={`text-sm font-medium whitespace-nowrap mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>My photo shows</span>
+                        {/* Supervisor Contact */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Supervisor contact</span>
                           <input
                             type="text"
-                            value={sfPhotoShows}
-                            onChange={(e) => { setSfPhotoShows(e.target.value); setIsVerified(false); setVerificationResult(null); }}
-                            placeholder="e.g. me organizing canned goods with other volunteers"
-                            className={`flex-1 min-w-[160px] px-3 py-2 rounded-lg border text-sm transition-all ${
+                            value={sfSupervisorContact}
+                            onChange={(e) => setSfSupervisorContact(e.target.value)}
+                            placeholder="e.g. jdoe@email.com or (425) 555-1234"
+                            className={`flex-1 min-w-[180px] px-3 py-2 rounded-lg border text-sm transition-all ${
                               darkMode
                                 ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
                                 : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
@@ -1682,14 +1779,13 @@ export function SubmitHoursPage() {
                         </p>
                       </div>
 
-                      {/* Verify Button */}
-                      {/* Verify & Submit combined button */}
+                      {/* Verify & Submit Button */}
                       <button
                         type="button"
                         onClick={handleVerifyImage}
-                        disabled={isVerifying || !sentenceFrameFilled}
+                        disabled={isVerifying || isSubmitting || !sentenceFrameFilled}
                         className={`w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${
-                          isVerifying || !sentenceFrameFilled
+                          isVerifying || isSubmitting || !sentenceFrameFilled
                             ? 'bg-gray-400 text-white cursor-not-allowed'
                             : darkMode
                             ? 'bg-blue-600 text-white hover:bg-blue-700'
@@ -1701,10 +1797,15 @@ export function SubmitHoursPage() {
                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             Verifying...
                           </>
+                        ) : isSubmitting ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Submitting...
+                          </>
                         ) : (
                           <>
-                            <Shield className="w-5 h-5" />
-                            Verify &amp; Submit
+                            <Send className="w-5 h-5" />
+                            Submit Hours
                           </>
                         )}
                       </button>
@@ -1759,8 +1860,8 @@ export function SubmitHoursPage() {
                 )}
               </form>
 
-              {/* View Leaderboard Link */}
-              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
+              {/* View Leaderboard + My Hours Links */}
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap justify-center gap-5">
                 <button
                   onClick={() => navigate('/hours-tracker')}
                   className={`inline-flex items-center gap-2 font-medium transition-colors ${
@@ -1769,12 +1870,47 @@ export function SubmitHoursPage() {
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  <Trophy className="w-5 h-5" />
-                  View Leaderboard
-                  <ArrowRight className="w-4 h-4" />
+                  <Trophy className="w-4 h-4" />
+                  Leaderboard
+                </button>
+                <button
+                  onClick={() => navigate('/my-hours')}
+                  className={`inline-flex items-center gap-2 font-medium transition-colors ${
+                    darkMode 
+                      ? 'text-blue-400 hover:text-blue-300' 
+                      : 'text-blue-600 hover:text-blue-800'
+                  }`}
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Check My Hours
                 </button>
               </div>
             </div>
+
+              {/* Hours Requirements */}
+              <div className={`rounded-3xl border p-5 ${
+                darkMode 
+                  ? 'bg-gray-900/80 border-gray-800' 
+                  : 'bg-white border-gray-200 shadow-lg'
+              }`}>
+                <h3 className={`text-lg font-semibold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Hours Requirements
+                </h3>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <div className={`p-3 rounded-xl text-center min-h-[88px] flex flex-col justify-between ${darkMode ? 'bg-blue-900/30' : 'bg-blue-50'}`}>
+                    <p className={`text-2xl font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>8</p>
+                    <p className={`text-xs ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>Max Summer</p>
+                  </div>
+                  <div className={`p-3 rounded-xl text-center min-h-[88px] flex flex-col justify-between ${darkMode ? 'bg-purple-900/30' : 'bg-purple-50'}`}>
+                    <p className={`text-2xl font-bold ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>6</p>
+                    <p className={`text-xs ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>Chapter Min</p>
+                  </div>
+                  <div className={`p-3 rounded-xl text-center min-h-[88px] flex flex-col justify-between col-span-2 sm:col-span-1 ${darkMode ? 'bg-emerald-900/30' : 'bg-emerald-50'}`}>
+                    <p className={`text-2xl font-bold ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>30</p>
+                    <p className={`text-xs ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>Total Required</p>
+                  </div>
+                </div>
+              </div>
           </motion.div>
 
           {/* Right Side - Rules */}
@@ -1782,25 +1918,25 @@ export function SubmitHoursPage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
-            className="space-y-6"
+            className="h-full"
           >
-            <div className={`rounded-3xl border p-8 ${
+            <div className={`h-full rounded-3xl border p-5 lg:p-6 ${
               darkMode 
                 ? 'bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700' 
                 : 'bg-gradient-to-br from-white to-blue-50 border-gray-200 shadow-xl'
             }`}>
-              <h2 className={`text-2xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              <h2 className={`text-2xl font-bold mb-5 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                 Submission Guidelines
               </h2>
               
-              <div className="space-y-5">
+              <div className="space-y-4">
                 {rules.map((rule, index) => (
                   <motion.div
                     key={rule.title}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 + index * 0.1 }}
-                    className={`p-4 rounded-xl ${darkMode ? 'bg-gray-800/50' : 'bg-white shadow-sm border border-gray-100'}`}
+                    className={`p-3.5 rounded-xl ${darkMode ? 'bg-gray-800/50' : 'bg-white shadow-sm border border-gray-100'}`}
                   >
                     <div className="flex items-start gap-4">
                       <div className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
@@ -1819,32 +1955,8 @@ export function SubmitHoursPage() {
                 ))}
               </div>
             </div>
-
-            {/* Quick Stats */}
-            <div className={`rounded-3xl border p-6 ${
-              darkMode 
-                ? 'bg-gray-900/80 border-gray-800' 
-                : 'bg-white border-gray-200 shadow-lg'
-            }`}>
-              <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                Hours Breakdown
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className={`p-4 rounded-xl text-center ${darkMode ? 'bg-blue-900/30' : 'bg-blue-50'}`}>
-                  <p className={`text-3xl font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>8</p>
-                  <p className={`text-sm ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>Max Summer Hours</p>
-                </div>
-                <div className={`p-4 rounded-xl text-center ${darkMode ? 'bg-purple-900/30' : 'bg-purple-50'}`}>
-                  <p className={`text-3xl font-bold ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>6</p>
-                  <p className={`text-sm ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>Chapter Hours</p>
-                </div>
-              </div>
-              <div className={`mt-4 p-4 rounded-xl text-center ${darkMode ? 'bg-emerald-900/30' : 'bg-emerald-50'}`}>
-                <p className={`text-4xl font-bold ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>30</p>
-                <p className={`text-sm ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>Total Required</p>
-              </div>
-            </div>
           </motion.div>
+        </div>
         </div>
       </div>
     </div>

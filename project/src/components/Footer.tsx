@@ -54,7 +54,19 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#" className="text-blue-200 hover:text-white transition-colors flex items-center">
+                <a href="/my-hours" className="text-blue-200 hover:text-white transition-colors flex items-center">
+                  <span className="w-2 h-2 bg-red-400 rounded-full mr-3"></span>
+                  My Hours
+                </a>
+              </li>
+              <li>
+                <a href="/hours-tracker" className="text-blue-200 hover:text-white transition-colors flex items-center">
+                  <span className="w-2 h-2 bg-red-400 rounded-full mr-3"></span>
+                  Leaderboard
+                </a>
+              </li>
+              <li>
+                <a href="mailto:1060801@lwsd.org" className="text-blue-200 hover:text-white transition-colors flex items-center">
                   <span className="w-2 h-2 bg-red-400 rounded-full mr-3"></span>
                   Member Resources
                 </a>
@@ -66,25 +78,31 @@ export function Footer() {
           <div>
             <h4 className="text-lg font-bold mb-4 text-white">Connect With Us</h4>
             <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-red-600 rounded-xl flex items-center justify-center">
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 flex-shrink-0 bg-red-600 rounded-xl flex items-center justify-center">
                   <MapPin className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-blue-200">10601 NE 132nd St, Kirkland, WA 98034</span>
+                <span className="text-blue-200 break-words">10601 NE 132nd St, Kirkland, WA 98034</span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-red-600 rounded-xl flex items-center justify-center">
                   <Mail className="w-4 h-4 text-white" />
                 </div>
-                <a href="mailto:nhs@juanitahs.edu" className="text-blue-200 hover:text-white transition-colors">
-                  1060801@lwsd.org
-                </a>
+                <div>
+                  <p className="text-xs text-blue-400 font-medium">NHS Advisor</p>
+                  <a href="mailto:1060801@lwsd.org" className="text-blue-200 hover:text-white transition-colors text-sm">
+                    1060801@lwsd.org
+                  </a>
+                </div>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-red-600 rounded-xl flex items-center justify-center">
                   <Phone className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-blue-200">(206) 584-9115</span>
+                <div>
+                  <p className="text-xs text-blue-400 font-medium">School Office</p>
+                  <span className="text-blue-200 text-sm">(206) 584-9115</span>
+                </div>
               </div>
             </div>
           </div>

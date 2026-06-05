@@ -21,9 +21,10 @@ export function Navigation() {
 
   const navItems = [
     { path: '/', label: 'Home' },
-    { path: '/volunteering', label: 'Opportunities' },
+    { path: '/submit-hours', label: 'Submit Hours' },
+    { path: '/my-hours', label: 'My Hours' },
     { path: '/hours-tracker', label: 'Leaderboard' },
-    { path: '/submit-hours', label: 'Submit Hours', isPrimary: true },
+    { path: '/volunteering', label: 'Opportunities' },
   ];
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -46,11 +47,11 @@ export function Navigation() {
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-red-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center">
                   <img 
                     src="https://upload.wikimedia.org/wikipedia/en/5/52/Juanita_High_School_Crest.png"
                     alt="Juanita High School"
-                    className="w-10 h-10 object-contain"
+                    className="w-12 h-12 object-contain"
                   />
                 </div>
                 <div className="hidden sm:block">
@@ -90,8 +91,6 @@ export function Navigation() {
                     ? darkMode 
                       ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
                       : 'bg-blue-900 text-white shadow-lg'
-                    : item.isPrimary
-                    ? 'bg-gradient-to-r from-blue-600 to-red-500 text-white hover:shadow-lg hover:scale-105 shadow-md'
                     : darkMode
                     ? 'text-gray-300 hover:text-white hover:bg-gray-800'
                     : 'text-gray-700 hover:text-blue-900 hover:bg-blue-50'
@@ -136,8 +135,6 @@ export function Navigation() {
                   className={`block px-4 py-3 text-sm font-semibold rounded-xl transition-colors ${
                     location.pathname === item.path
                       ? 'bg-blue-900 text-white'
-                      : item.isPrimary
-                      ? 'bg-gradient-to-r from-blue-900 to-red-600 text-white'
                       : darkMode
                       ? 'text-gray-300 hover:text-white hover:bg-gray-800'
                       : 'text-gray-700 hover:text-blue-900 hover:bg-blue-50'
