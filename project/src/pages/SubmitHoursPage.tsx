@@ -1577,7 +1577,7 @@ export function SubmitHoursPage() {
                     Proof Of Volunteering <span className="text-red-500">*</span>
                   </label>
                   <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                    Upload a photo from your event, or a screenshot of an email with an organizer/advisor confirming your participation. If your proof isn't approved by the AI, email{' '}
+                    Upload a photo from your event, or a screenshot of an email with an organizer/advisor confirming your participation. If you have trouble getting your image accepted or forgot to take proof, email{' '}
                     <a href="mailto:1060801@lwsd.org" className={`font-semibold underline ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>1060801@lwsd.org</a>{' '}
                     and you will receive an override code.
                   </p>
