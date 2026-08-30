@@ -372,7 +372,14 @@ export function SubmitHoursPage() {
     sfSupervisorContact && `Supervisor contact: ${sfSupervisorContact}`,
   ].filter(Boolean).join(', ') + '.';
 
-  const sentenceFrameFilled = sfOrganization.trim().length > 0 && sfActivity.trim().length > 0 && sfPhotoShows.trim().length > 0;
+  // Every detail field is required - they all get written to the spreadsheet.
+  const sentenceFrameFilled =
+    sfOrganization.trim().length > 0 &&
+    sfActivity.trim().length > 0 &&
+    sfDate.trim().length > 0 &&
+    sfPhotoShows.trim().length > 0 &&
+    sfSupervisor.trim().length > 0 &&
+    sfSupervisorContact.trim().length > 0;
 
   const resetSentenceFrame = () => {
     setSfOrganization('');
@@ -510,6 +517,12 @@ export function SubmitHoursPage() {
   const handleVerifyImage = async () => {
     // Check for admin bypass code
     if (adminCode === '1060801') {
+      // Bypass skips the AI check, not the required details
+      if (!sentenceFrameFilled) {
+        setErrorMessage('Please fill in all of the activity detail fields before submitting.');
+        setSubmitStatus('error');
+        return;
+      }
       setIsVerified(true);
       setVerificationResult({ isValid: true });
       await doSubmitForm(true);
@@ -518,7 +531,7 @@ export function SubmitHoursPage() {
 
     // Require sentence frame fields filled
     if (!sentenceFrameFilled) {
-      setErrorMessage('Please fill in at least the Organization, Activity, and Photo Description fields.');
+      setErrorMessage('Please fill in all of the activity detail fields - organization, activity, date, photo description, supervisor, and supervisor contact.');
       setSubmitStatus('error');
       return;
     }
@@ -637,7 +650,13 @@ export function SubmitHoursPage() {
         summerHours: parseFloat(formData.summerHours) || 0,
         chapterHours: parseFloat(formData.chapterHours) || 0,
         otherHours: parseFloat(formData.otherHours) || 0,
-        inducted: formData.inducted
+        inducted: formData.inducted,
+        organization: sfOrganization,
+        activity: sfActivity,
+        serviceDate: sfDate,
+        photoShows: sfPhotoShows,
+        supervisor: sfSupervisor,
+        supervisorContact: sfSupervisorContact
       };
 
       await submitHours(submission);
@@ -1646,7 +1665,7 @@ export function SubmitHoursPage() {
                           Describe Your Activity <span className="text-red-500">*</span>
                         </label>
                         <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                          Fill in the fields below. Organization, Activity, and Photo Description are required.
+                          Fill in every field below - all of them are required.
                         </p>
 
                         {/* Organization */}

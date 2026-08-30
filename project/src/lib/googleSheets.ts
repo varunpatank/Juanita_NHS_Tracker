@@ -34,6 +34,13 @@ export interface HoursSubmission {
   chapterHours: number;
   otherHours: number;
   inducted: string;
+  // New detail fields (written to columns H-M)
+  organization: string;
+  activity: string;
+  serviceDate: string;
+  photoShows: string;
+  supervisor: string;
+  supervisorContact: string;
 }
 
 /**
@@ -95,7 +102,13 @@ export async function submitHours(submission: HoursSubmission): Promise<boolean>
       summerHours: submission.summerHours,
       chapterHours: submission.chapterHours,
       otherHours: submission.otherHours,
-      totalHours: totalHours
+      totalHours: totalHours,
+      organization: submission.organization,
+      activity: submission.activity,
+      serviceDate: submission.serviceDate,
+      photoShows: submission.photoShows,
+      supervisor: submission.supervisor,
+      supervisorContact: submission.supervisorContact
     };
 
     // Use GET with query params for Apps Script (more reliable for CORS)
@@ -125,119 +138,129 @@ export function isWriteEnabled(): boolean {
 }
 
 // ============================================
-// GOOGLE APPS SCRIPT CODE (UPDATED v3 - with Other Hours)
+// GOOGLE APPS SCRIPT CODE (v5 - detail fields, single sheet)
 // ============================================
-// Copy this code to your Google Sheet's Apps Script editor:
-// (Extensions > Apps Script)
-// IMPORTANT: After pasting, click Deploy > New Deployment again!
-// Sheet columns: Name | Grade | Inducted | Summer Hours | Chapter Hours | Other Hours | Total Hours
+// Paste into Extensions > Apps Script, then Deploy > Manage deployments >
+// edit the existing deployment > Version: "New version" > Deploy.
+// Sheet1 columns:
+//   A Name | B Grade | C Inducted | D Summer | E Chapter | F Other | G Total
+//   H Organization | I Activity | J Date of Service | K Photo Shows
+//   L Supervisor | M Supervisor Contact | N Last Updated
 /*
+
+var SPREADSHEET_ID = '12xjBJY7Rg1TClIu1qSwEiIANwrXiC3wuD9iyVTKcwFI';
+var SHEET_NAME = 'Sheet1';
+var COLS = 14; // A..N
 
 function doGet(e) {
   try {
-    // Handle submission via GET (for CORS compatibility)
     if (e.parameter.action === 'submit' && e.parameter.data) {
-      var data = JSON.parse(e.parameter.data);
-      var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Sheet1');
-      
-      // Check if name already exists
-      var values = sheet.getDataRange().getValues();
-      var found = false;
-      
-      for (var i = 1; i < values.length; i++) {
-        if (values[i][0] && values[i][0].toString().toLowerCase() === data.name.toLowerCase()) {
-          // Update existing row - ADD new hours to existing hours
-          var existingSummer = parseFloat(values[i][3]) || 0;
-          var existingChapter = parseFloat(values[i][4]) || 0;
-          var existingOther = parseFloat(values[i][5]) || 0;
-          var newSummer = existingSummer + parseFloat(data.summerHours);
-          var newChapter = existingChapter + parseFloat(data.chapterHours);
-          var newOther = existingOther + parseFloat(data.otherHours);
-          // Cap summer hours at 8 for total calculation
-          var effectiveSummer = Math.min(newSummer, 8);
-          var newTotal = effectiveSummer + newChapter + newOther;
-          
-          sheet.getRange(i + 1, 1, 1, 7).setValues([[
-            data.name,
-            data.grade,
-            data.inducted,
-            newSummer,
-            newChapter,
-            newOther,
-            newTotal
-          ]]);
-          found = true;
-          break;
-        }
-      }
-      
-      if (!found) {
-        // Add new row
-        sheet.appendRow([
-          data.name,
-          data.grade,
-          data.inducted,
-          parseFloat(data.summerHours) || 0,
-          parseFloat(data.chapterHours) || 0,
-          parseFloat(data.otherHours) || 0,
-          parseFloat(data.totalHours) || 0
-        ]);
-      }
-      
-      return ContentService.createTextOutput(JSON.stringify({success: true}))
-        .setMimeType(ContentService.MimeType.JSON);
+      var result = handleSubmit(JSON.parse(e.parameter.data));
+      return json(result);
     }
-    
-    return ContentService.createTextOutput(JSON.stringify({status: 'NHS Hours API is running'}))
-      .setMimeType(ContentService.MimeType.JSON);
+    return json({status: 'NHS Hours API is running'});
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({success: false, error: error.toString()}))
-      .setMimeType(ContentService.MimeType.JSON);
+    return json({success: false, error: error.toString()});
   }
 }
 
 function doPost(e) {
   try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Sheet1');
-    var data = JSON.parse(e.postData.contents);
-    
-    var values = sheet.getDataRange().getValues();
-    var found = false;
-    
-    for (var i = 1; i < values.length; i++) {
-      if (values[i][0] && values[i][0].toString().toLowerCase() === data.name.toLowerCase()) {
-        sheet.getRange(i + 1, 1, 1, 7).setValues([[
-          data.name,
-          data.grade,
-          data.inducted,
-          data.summerHours,
-          data.chapterHours,
-          data.otherHours,
-          data.totalHours
-        ]]);
-        found = true;
+    return json(handleSubmit(JSON.parse(e.postData.contents)));
+  } catch (error) {
+    return json({success: false, error: error.toString()});
+  }
+}
+
+function handleSubmit(data) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000); // stop two submissions racing for the same row
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName(SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + SHEET_NAME + '" not found');
+
+    var name = (data.name || '').toString().trim();
+    if (!name) throw new Error('Missing name');
+
+    // Only look at column A to find the last real member row. getDataRange()
+    // can stretch far past the real data if any stray cell was ever touched,
+    // which is what made appended rows land hundreds of rows down the sheet.
+    var lastRow = getLastNameRow(sheet);
+    var names = lastRow >= 2
+      ? sheet.getRange(2, 1, lastRow - 1, 1).getValues()
+      : [];
+
+    var targetRow = 0;
+    for (var i = 0; i < names.length; i++) {
+      var existing = (names[i][0] || '').toString().trim().toLowerCase();
+      if (existing && existing === name.toLowerCase()) {
+        targetRow = i + 2;
         break;
       }
     }
-    
-    if (!found) {
-      sheet.appendRow([
-        data.name,
-        data.grade,
-        data.inducted,
-        data.summerHours,
-        data.chapterHours,
-        data.otherHours,
-        data.totalHours
-      ]);
+
+    var summer = num(data.summerHours);
+    var chapter = num(data.chapterHours);
+    var other = num(data.otherHours);
+    var grade = data.grade || '';
+    var inducted = data.inducted || '';
+
+    if (targetRow) {
+      // Existing member: add the new hours onto what is already there
+      var cur = sheet.getRange(targetRow, 1, 1, COLS).getValues()[0];
+      summer += num(cur[3]);
+      chapter += num(cur[4]);
+      other += num(cur[5]);
+      if (!grade) grade = cur[1];
+      if (!inducted) inducted = cur[2];
+    } else {
+      targetRow = lastRow + 1; // first empty row under the real data
     }
-    
-    return ContentService.createTextOutput(JSON.stringify({success: true}))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({success: false, error: error.toString()}))
-      .setMimeType(ContentService.MimeType.JSON);
+
+    var total = Math.min(summer, 8) + chapter + other; // summer capped at 8
+
+    sheet.getRange(targetRow, 1, 1, COLS).setValues([[
+      name,
+      grade,
+      inducted,
+      summer,
+      chapter,
+      other,
+      total,
+      data.organization || '',
+      data.activity || '',
+      data.serviceDate || '',
+      data.photoShows || '',
+      data.supervisor || '',
+      data.supervisorContact || '',
+      new Date()
+    ]]);
+
+    return {success: true, row: targetRow, totalHours: total};
+  } finally {
+    lock.releaseLock();
   }
+}
+
+function getLastNameRow(sheet) {
+  var max = sheet.getLastRow();
+  if (max < 2) return 1;
+  var col = sheet.getRange(2, 1, max - 1, 1).getValues();
+  for (var i = col.length - 1; i >= 0; i--) {
+    if ((col[i][0] || '').toString().trim() !== '') return i + 2;
+  }
+  return 1; // header only
+}
+
+function num(v) {
+  var n = parseFloat(v);
+  return isNaN(n) ? 0 : n;
+}
+
+function json(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 */
