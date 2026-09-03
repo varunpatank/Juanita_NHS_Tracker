@@ -7,10 +7,13 @@ import { submitHours, isWriteEnabled, fetchMembers, type HoursSubmission, type M
 import { validateImageFile, type ImageVerificationResult, verifyImage } from '../lib/imageVerification';
 import { PageHero } from '../components/PageHero';
 
+// Kept in project/.env so it is not committed to the repo.
+const ADMIN_OVERRIDE_CODE = import.meta.env.VITE_ADMIN_OVERRIDE_CODE;
+
 
 // Confetti particle component
 const ConfettiParticle = ({ delay, x }: { delay: number; x: number }) => {
-  const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4'];
+  const colors = ['#1e3a8a', '#2563eb', '#60a5fa', '#f59e0b', '#fbbf24', '#fcd34d', '#ffffff'];
   const color = colors[Math.floor(Math.random() * colors.length)];
   const size = Math.random() * 10 + 5;
   const rotation = Math.random() * 360;
@@ -87,7 +90,7 @@ const SuccessCelebration = ({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
       className={`fixed inset-0 z-50 overflow-y-auto ${
-        darkMode ? 'bg-gray-900/95' : 'bg-white/95'
+        darkMode ? 'bg-navy-950/95' : 'bg-white/95'
       } backdrop-blur-sm`}
       onClick={onComplete}
     >
@@ -153,7 +156,7 @@ const SuccessCelebration = ({
             transition={{ delay: 0.9 }}
             className="absolute -bottom-1 -left-2"
           >
-            <PartyPopper className="w-5 h-5 text-pink-400" />
+            <PartyPopper className="w-5 h-5 text-amber-300" />
           </motion.div>
         </motion.div>
 
@@ -171,7 +174,7 @@ const SuccessCelebration = ({
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.7 }}
-          className={`text-lg mb-6 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}
+          className={`text-lg mb-6 ${darkMode ? 'text-navy-100' : 'text-gray-600'}`}
         >
           Great job{submittedName ? `, ${submittedName.split(' ')[0]}` : ''}! 🎉
         </motion.p>
@@ -184,7 +187,7 @@ const SuccessCelebration = ({
             transition={{ delay: 0.8, type: "spring", stiffness: 150 }}
             className={`p-6 rounded-2xl mb-6 ${
               darkMode 
-                ? 'bg-gray-800/80 border border-gray-700' 
+                ? 'bg-navy-900/80 border border-white/10' 
                 : 'bg-white border border-gray-200 shadow-xl'
             }`}
           >
@@ -206,7 +209,7 @@ const SuccessCelebration = ({
             {/* Main total display */}
             <div className="mb-4">
               <p className={`text-sm uppercase tracking-wider font-semibold mb-1 ${
-                darkMode ? 'text-gray-500' : 'text-gray-400'
+                darkMode ? 'text-navy-200/60' : 'text-navy-200/75'
               }`}>
                 Your Total Hours
               </p>
@@ -214,12 +217,12 @@ const SuccessCelebration = ({
                 yearComplete ? 'text-emerald-500' : darkMode ? 'text-white' : 'text-gray-900'
               }`}>
                 {stats.totalHours.toFixed(1)}
-                <span className={`text-xl font-normal ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}> / 30</span>
+                <span className={`text-xl font-normal ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}> / 30</span>
               </p>
             </div>
 
             {/* Progress bar */}
-            <div className={`h-4 rounded-full overflow-hidden mb-4 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+            <div className={`h-4 rounded-full overflow-hidden mb-4 ${darkMode ? 'bg-navy-800' : 'bg-gray-200'}`}>
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
@@ -237,14 +240,14 @@ const SuccessCelebration = ({
               <div className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
                 firstSemesterComplete 
                   ? (darkMode ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-100 text-emerald-700')
-                  : (darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500')
+                  : (darkMode ? 'bg-navy-800 text-navy-200/75' : 'bg-gray-100 text-navy-200/60')
               }`}>
                 1st Semester: {firstSemesterComplete ? '✓ Complete' : `${Math.max(0, 10 - stats.totalHours).toFixed(1)} more`}
               </div>
               <div className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
                 yearComplete 
                   ? (darkMode ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-100 text-emerald-700')
-                  : (darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500')
+                  : (darkMode ? 'bg-navy-800 text-navy-200/75' : 'bg-gray-100 text-navy-200/60')
               }`}>
                 Full Year: {yearComplete ? '✓ Complete' : `${Math.max(0, 30 - stats.totalHours).toFixed(1)} more`}
               </div>
@@ -252,17 +255,17 @@ const SuccessCelebration = ({
 
             {/* Hours breakdown */}
             <div className="grid grid-cols-3 gap-2">
-              <div className={`p-2 rounded-lg ${darkMode ? 'bg-blue-900/30' : 'bg-blue-50'}`}>
-                <p className={`text-lg font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+              <div className={`p-2 rounded-lg ${darkMode ? 'bg-navy-900/30' : 'bg-blue-50'}`}>
+                <p className={`text-lg font-bold ${darkMode ? 'text-gold-300' : 'text-blue-600'}`}>
                   {stats.summerHours}
                 </p>
-                <p className={`text-xs ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>Summer</p>
+                <p className={`text-xs ${darkMode ? 'text-gold-200' : 'text-blue-700'}`}>Summer</p>
               </div>
-              <div className={`p-2 rounded-lg ${darkMode ? 'bg-purple-900/30' : 'bg-purple-50'}`}>
-                <p className={`text-lg font-bold ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+              <div className={`p-2 rounded-lg ${darkMode ? 'bg-navy-900/30' : 'bg-blue-50'}`}>
+                <p className={`text-lg font-bold ${darkMode ? 'text-gold-300' : 'text-blue-600'}`}>
                   {stats.chapterHours}
                 </p>
-                <p className={`text-xs ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>Chapter</p>
+                <p className={`text-xs ${darkMode ? 'text-gold-200' : 'text-blue-700'}`}>Chapter</p>
               </div>
               <div className={`p-2 rounded-lg ${darkMode ? 'bg-emerald-900/30' : 'bg-emerald-50'}`}>
                 <p className={`text-lg font-bold ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
@@ -284,7 +287,7 @@ const SuccessCelebration = ({
             onClick={onComplete}
             className={`px-6 py-3 rounded-xl font-semibold transition-all ${
               darkMode 
-                ? 'bg-gray-800 text-white hover:bg-gray-700' 
+                ? 'bg-navy-900 text-white hover:bg-navy-800' 
                 : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
             }`}
           >
@@ -292,7 +295,7 @@ const SuccessCelebration = ({
           </button>
           <button
             onClick={onComplete}
-            className="px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+            className="px-6 py-3 rounded-xl font-semibold bg-gold-400 text-navy-950 hover:bg-gold-300 shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
           >
             <Trophy className="w-5 h-5" />
             Leaderboard
@@ -303,7 +306,7 @@ const SuccessCelebration = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.5 }}
-          className={`text-sm mt-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}
+          className={`text-sm mt-4 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}
         >
           Click anywhere to close
         </motion.p>
@@ -516,7 +519,7 @@ export function SubmitHoursPage() {
 
   const handleVerifyImage = async () => {
     // Check for admin bypass code
-    if (adminCode === '1060801') {
+    if (ADMIN_OVERRIDE_CODE && adminCode === ADMIN_OVERRIDE_CODE) {
       // Bypass skips the AI check, not the required details
       if (!sentenceFrameFilled) {
         setErrorMessage('Please fill in all of the activity detail fields before submitting.');
@@ -742,6 +745,19 @@ export function SubmitHoursPage() {
   const totalHours = effectiveSummerHours + chapterHours + otherHours;
   const summerHoursExceeded = rawSummerHours > 8;
 
+  // What a returning member's record will read once this submission lands.
+  const cur = selectedMemberCurrentHours;
+  const projected = cur
+    ? (() => {
+        const summerRaw = cur.summerHours + rawSummerHours;
+        const summer = Math.min(summerRaw, 8);
+        const chapter = cur.chapterHours + chapterHours;
+        const other = cur.otherHours + otherHours;
+        return { summer, summerRaw, chapter, other, total: summer + chapter + other };
+      })()
+    : null;
+  const adding = totalHours > 0;
+
   const rules = [
     {
       icon: Clock,
@@ -753,7 +769,7 @@ export function SubmitHoursPage() {
       icon: Users,
       title: '6 Chapter-Sponsored Hours',
       description: '6 of the 30 hours must be chapter sponsored (supporting students and/or staff of Lake Washington School District), completed any time throughout the year.',
-      color: 'text-purple-500'
+      color: 'text-blue-500'
     },
     {
       icon: BookOpen,
@@ -771,7 +787,7 @@ export function SubmitHoursPage() {
       icon: UserPlus,
       title: 'Induction Eligibility',
       description: 'Sophomores, Juniors, and Seniors who meet all requirements can apply for induction. Freshmen are not eligible for induction until they have an official high school GPA.',
-      color: 'text-rose-500'
+      color: 'text-amber-500'
     }
   ];
 
@@ -804,7 +820,7 @@ export function SubmitHoursPage() {
             className="fixed inset-0 z-50 flex items-center justify-center"
             onClick={() => setShowVerifiedPopup(false)}
           >
-            <div className={`absolute inset-0 ${darkMode ? 'bg-gray-900/80' : 'bg-black/40'} backdrop-blur-sm`} />
+            <div className={`absolute inset-0 ${darkMode ? 'bg-navy-950/80' : 'bg-black/40'} backdrop-blur-sm`} />
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
               {verifyConfetti.map((particle) => (
                 <ConfettiParticle key={particle.id} delay={particle.delay} x={particle.x} />
@@ -817,7 +833,7 @@ export function SubmitHoursPage() {
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}
               className={`relative z-10 p-8 rounded-2xl shadow-2xl text-center max-w-sm w-full mx-4 ${
                 darkMode 
-                  ? 'bg-gradient-to-b from-gray-800 to-gray-900 border border-emerald-500/30' 
+                  ? 'bg-gradient-to-b from-navy-900 to-navy-950 border border-emerald-500/30' 
                   : 'bg-white border border-emerald-200'
               }`}
               onClick={(e) => e.stopPropagation()}
@@ -844,7 +860,7 @@ export function SubmitHoursPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className={`text-sm mb-6 break-words ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}
+                className={`text-sm mb-6 break-words ${darkMode ? 'text-navy-200/75' : 'text-navy-200/60'}`}
               >
                 {verifyPopupReasoning}
               </motion.p>
@@ -857,7 +873,7 @@ export function SubmitHoursPage() {
                 <button
                   onClick={handleSubmitFromPopup}
                   disabled={isSubmitting}
-                  className="w-full py-3 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl font-semibold bg-gold-400 text-navy-950 hover:bg-gold-300 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
                     <>
@@ -875,8 +891,8 @@ export function SubmitHoursPage() {
                   onClick={() => setShowVerifiedPopup(false)}
                   className={`w-full py-2 rounded-xl text-sm font-medium transition-colors ${
                     darkMode
-                      ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                      ? 'text-navy-200/75 hover:text-gray-200 hover:bg-navy-800/50'
+                      : 'text-navy-200/60 hover:text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   Cancel
@@ -898,7 +914,7 @@ export function SubmitHoursPage() {
             className="fixed inset-0 z-50 overflow-y-auto"
             onClick={() => setShowFailedPopup(false)}
           >
-            <div className={`fixed inset-0 ${darkMode ? 'bg-gray-900/80' : 'bg-black/40'} backdrop-blur-sm`} />
+            <div className={`fixed inset-0 ${darkMode ? 'bg-navy-950/80' : 'bg-black/40'} backdrop-blur-sm`} />
             <div className="flex min-h-full items-center justify-center py-8 px-4">
             <motion.div
               initial={{ scale: 0.5, opacity: 0, y: 20 }}
@@ -907,7 +923,7 @@ export function SubmitHoursPage() {
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}
               className={`relative z-10 p-8 rounded-2xl shadow-2xl text-center w-full max-w-sm ${
                 darkMode 
-                  ? 'bg-gradient-to-b from-gray-800 to-gray-900 border border-red-500/30' 
+                  ? 'bg-gradient-to-b from-navy-900 to-navy-950 border border-red-500/30' 
                   : 'bg-white border border-red-200'
               }`}
               onClick={(e) => e.stopPropagation()}
@@ -934,7 +950,7 @@ export function SubmitHoursPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className={`text-sm break-words ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}
+                className={`text-sm break-words ${darkMode ? 'text-navy-200/75' : 'text-navy-200/60'}`}
               >
                 {verifyPopupReasoning}
               </motion.p>
@@ -971,7 +987,7 @@ export function SubmitHoursPage() {
 
       <div className={`min-h-screen ${
         darkMode 
-          ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950' 
+          ? 'bg-gradient-to-br from-navy-950 via-navy-950 to-navy-950' 
           : 'bg-gray-50'
       }`}>
         <motion.div
@@ -1000,7 +1016,7 @@ export function SubmitHoursPage() {
             >
               <div className={`flex-1 rounded-3xl border p-5 lg:p-6 ${
                 darkMode 
-                  ? 'bg-gray-900/80 border-gray-800' 
+                  ? 'bg-navy-950/80 border-white/10' 
                   : 'bg-white border-gray-200 shadow-sm'
               }`}>
                 {/* Success Message */}
@@ -1046,8 +1062,8 @@ export function SubmitHoursPage() {
                       }`}>
                         Have You Submitted Hours On This Website Before?
                       </h2>
-                      <p className={`text-base ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                        If this is your first time using this site, select <span className={`font-semibold ${darkMode ? 'text-red-400' : 'text-red-600'}`}>"New to This Site"</span> below
+                      <p className={`text-base ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>
+                        If this is your first time using this site, select <span className={`font-semibold ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>"New to This Site"</span> below
                       </p>
                     </div>
                     
@@ -1065,7 +1081,7 @@ export function SubmitHoursPage() {
                         }}
                         className={`w-full p-4 rounded-2xl border-2 transition-all duration-200 text-left group hover:scale-[1.01] ${
                           darkMode 
-                            ? 'bg-blue-950/50 border-blue-500/40 hover:border-blue-400 hover:bg-blue-900/50' 
+                            ? 'bg-blue-950/50 border-gold-400/40 hover:border-blue-400 hover:bg-navy-900/50' 
                             : 'bg-blue-50/80 border-blue-300 hover:border-blue-500 hover:bg-blue-100 hover:shadow-lg hover:shadow-blue-200/50'
                         }`}
                       >
@@ -1077,14 +1093,14 @@ export function SubmitHoursPage() {
                             <h4 className={`font-bold text-lg ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                               I've Submitted On This Site Before
                             </h4>
-                            <p className={`text-sm mt-1 ${darkMode ? 'text-blue-300' : 'text-blue-600'}`}>
+                            <p className={`text-sm mt-1 ${darkMode ? 'text-gold-200' : 'text-blue-600'}`}>
                               Find my existing record on this website
                             </p>
                           </div>
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all group-hover:translate-x-1 ${
-                            darkMode ? 'bg-blue-500/30' : 'bg-blue-200'
+                            darkMode ? 'bg-gold-400/30' : 'bg-blue-200'
                           }`}>
-                            <ArrowRight className={`w-5 h-5 ${darkMode ? 'text-blue-300' : 'text-blue-600'}`} />
+                            <ArrowRight className={`w-5 h-5 ${darkMode ? 'text-gold-200' : 'text-blue-600'}`} />
                           </div>
                         </div>
                       </button>
@@ -1102,26 +1118,26 @@ export function SubmitHoursPage() {
                         }}
                         className={`w-full p-4 rounded-2xl border-2 transition-all duration-200 text-left group hover:scale-[1.01] ${
                           darkMode 
-                            ? 'bg-teal-950/50 border-teal-500/40 hover:border-teal-400 hover:bg-teal-900/50' 
-                            : 'bg-teal-50/80 border-teal-300 hover:border-teal-500 hover:bg-teal-100 hover:shadow-lg hover:shadow-teal-200/50'
+                            ? 'bg-blue-950/50 border-gold-400/40 hover:border-blue-400 hover:bg-navy-900/50' 
+                            : 'bg-blue-50/80 border-blue-300 hover:border-blue-500 hover:bg-blue-100 hover:shadow-lg hover:shadow-blue-200/50'
                         }`}
                       >
                         <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-teal-500 to-teal-600 shadow-lg shadow-teal-500/40">
+                          <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/40">
                             <UserPlus className="w-7 h-7 text-white" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className={`font-bold text-lg ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                               New to This Site
                             </h4>
-                            <p className={`text-sm mt-1 ${darkMode ? 'text-teal-300' : 'text-teal-600'}`}>
+                            <p className={`text-sm mt-1 ${darkMode ? 'text-gold-200' : 'text-blue-600'}`}>
                               I've never submitted hours on this website before
                             </p>
                           </div>
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all group-hover:translate-x-1 ${
-                            darkMode ? 'bg-teal-500/30' : 'bg-teal-200'
+                            darkMode ? 'bg-gold-400/30' : 'bg-blue-200'
                           }`}>
-                            <ArrowRight className={`w-5 h-5 ${darkMode ? 'text-teal-300' : 'text-teal-600'}`} />
+                            <ArrowRight className={`w-5 h-5 ${darkMode ? 'text-gold-200' : 'text-blue-600'}`} />
                           </div>
                         </div>
                       </button>
@@ -1146,7 +1162,7 @@ export function SubmitHoursPage() {
                         setSelectedMemberCurrentHours(null);
                       }}
                       className={`mb-4 text-sm flex items-center gap-1 transition-colors ${
-                        darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'
+                        darkMode ? 'text-navy-200/75 hover:text-white' : 'text-navy-200/60 hover:text-gray-800'
                       }`}
                     >
                       <ArrowRight className="w-4 h-4 rotate-180" />
@@ -1156,18 +1172,18 @@ export function SubmitHoursPage() {
                     {/* Header showing current mode */}
                     <div className={`p-3 rounded-xl mb-2 flex items-center gap-3 ${
                       isNewMember 
-                        ? darkMode ? 'bg-teal-900/30 border border-teal-500/30' : 'bg-teal-50 border border-teal-200'
-                        : darkMode ? 'bg-blue-900/30 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'
+                        ? darkMode ? 'bg-navy-900/30 border border-gold-400/30' : 'bg-blue-50 border border-blue-200'
+                        : darkMode ? 'bg-navy-900/30 border border-gold-400/30' : 'bg-blue-50 border border-blue-200'
                     }`}>
                       {isNewMember ? (
-                        <UserPlus className={`w-5 h-5 ${darkMode ? 'text-teal-400' : 'text-teal-600'}`} />
+                        <UserPlus className={`w-5 h-5 ${darkMode ? 'text-gold-300' : 'text-blue-600'}`} />
                       ) : (
-                        <Users className={`w-5 h-5 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                        <Users className={`w-5 h-5 ${darkMode ? 'text-gold-300' : 'text-blue-600'}`} />
                       )}
                       <span className={`text-sm font-semibold ${
                         isNewMember 
-                          ? darkMode ? 'text-teal-400' : 'text-teal-700'
-                          : darkMode ? 'text-blue-400' : 'text-blue-700'
+                          ? darkMode ? 'text-gold-300' : 'text-blue-700'
+                          : darkMode ? 'text-gold-300' : 'text-blue-700'
                       }`}>
                         {isNewMember ? 'Creating New Member Profile' : 'Finding Your Existing Record'}
                       </span>
@@ -1176,10 +1192,10 @@ export function SubmitHoursPage() {
                 {/* Existing Member Autocomplete OR New Name Input */}
                 {!isNewMember ? (
                   <div className="relative">
-                    <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>
                       Find Your Name <span className="text-red-500">*</span>
                     </label>
-                    <p className={`text-xs mb-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                    <p className={`text-xs mb-2 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>
                       Type your <strong>exact full name</strong> (no typos), then click <strong>Find</strong>. If you're already in the spreadsheet, your name will appear below — click it to select.
                     </p>
                     <div className="flex gap-2">
@@ -1197,8 +1213,8 @@ export function SubmitHoursPage() {
                         disabled={isLoadingMembers}
                         className={`flex-1 px-4 py-3 rounded-xl border transition-all ${
                           darkMode 
-                            ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
-                            : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                            ? 'bg-navy-900 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20' 
+                            : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
                         } ${isLoadingMembers ? 'opacity-50 cursor-wait' : ''} ${
                           selectedMember ? (darkMode ? 'border-green-500 bg-green-900/20' : 'border-green-500 bg-green-50') : ''
                         }`}
@@ -1211,8 +1227,8 @@ export function SubmitHoursPage() {
                           nameSearchQuery.trim().length >= 2
                             ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
                             : darkMode
-                            ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            ? 'bg-navy-800 text-navy-200/60 cursor-not-allowed'
+                            : 'bg-gray-200 text-navy-200/75 cursor-not-allowed'
                         }`}
                       >
                         <Users className="w-4 h-4" />
@@ -1234,14 +1250,14 @@ export function SubmitHoursPage() {
                           exit={{ opacity: 0, y: -10 }}
                           className={`mt-3 rounded-xl border shadow-lg max-h-60 overflow-y-auto ${
                             darkMode 
-                              ? 'bg-gray-800 border-gray-700' 
+                              ? 'bg-navy-900 border-white/10' 
                               : 'bg-white border-gray-200'
                           }`}
                         >
                           {filteredMembers.length > 0 ? (
                             <>
                               <div className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider border-b ${
-                                darkMode ? 'text-gray-500 bg-gray-900/50 border-gray-700' : 'text-gray-400 bg-gray-50 border-gray-100'
+                                darkMode ? 'text-navy-200/60 bg-navy-950/50 border-white/10' : 'text-navy-200/75 bg-gray-50 border-gray-100'
                               }`}>
                                 🎉 Found! Click your name below to select
                               </div>
@@ -1252,12 +1268,12 @@ export function SubmitHoursPage() {
                                   onClick={() => handleMemberSelect(member.name)}
                                   className={`w-full px-4 py-3 text-left transition-colors flex justify-between items-center ${
                                     darkMode 
-                                      ? 'hover:bg-blue-600/30 text-white border-b border-gray-700 last:border-0' 
+                                      ? 'hover:bg-blue-600/30 text-white border-b border-white/10 last:border-0' 
                                       : 'hover:bg-blue-100 text-gray-900 border-b border-gray-100 last:border-0'
                                   }`}
                                 >
                                   <span className="font-medium">{member.name}</span>
-                                  <span className={`text-sm px-2 py-0.5 rounded ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+                                  <span className={`text-sm px-2 py-0.5 rounded ${darkMode ? 'bg-navy-800 text-navy-100' : 'bg-gray-100 text-gray-600'}`}>
                                     {member.grade}
                                   </span>
                                 </button>
@@ -1265,7 +1281,7 @@ export function SubmitHoursPage() {
                             </>
                           ) : (
                             <div className={`px-4 py-4 text-center ${
-                              darkMode ? 'text-gray-400' : 'text-gray-500'
+                              darkMode ? 'text-navy-200/75' : 'text-navy-200/60'
                             }`}>
                               <p className="font-medium">❌ No matching members found</p>
                               <p className="text-sm mt-1">Make sure you typed your name exactly as registered (check spelling!).</p>
@@ -1282,71 +1298,144 @@ export function SubmitHoursPage() {
                       </p>
                     )}
 
-                    {/* Current hours panel for existing member */}
-                    {selectedMemberCurrentHours && (
+                    {/* Record on file, updating live as hours are typed */}
+                    {cur && projected && (
                       <motion.div
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className={`mt-3 p-4 rounded-xl border ${
-                          darkMode ? 'bg-blue-900/20 border-blue-500/30' : 'bg-blue-50 border-blue-200'
+                        className={`mt-3 rounded-2xl border p-5 ${
+                          darkMode
+                            ? 'bg-navy-900/40 border-white/10'
+                            : 'bg-white border-navy-900/12 shadow-sm'
                         }`}
                       >
-                        <p className={`text-xs font-bold uppercase tracking-wide mb-2 ${darkMode ? 'text-blue-400' : 'text-blue-700'}`}>
-                          Your Current Hours on Record
-                        </p>
-                        <div className="grid grid-cols-4 gap-2 mb-2">
-                          <div className="text-center">
-                            <p className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{selectedMemberCurrentHours.totalHours}</p>
-                            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Total</p>
-                          </div>
-                          <div className="text-center">
-                            <p className={`text-xl font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>{selectedMemberCurrentHours.summerHours}</p>
-                            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Summer</p>
-                          </div>
-                          <div className="text-center">
-                            <p className={`text-xl font-bold ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>{selectedMemberCurrentHours.chapterHours}</p>
-                            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Chapter</p>
-                          </div>
-                          <div className="text-center">
-                            <p className={`text-xl font-bold ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>{selectedMemberCurrentHours.otherHours}</p>
-                            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Other</p>
-                          </div>
+                        <div className="flex items-baseline justify-between">
+                          <p className={`text-[11px] font-semibold uppercase tracking-eyebrow ${
+                            darkMode ? 'text-gold-300' : 'text-gold-600'
+                          }`}>
+                            {adding ? 'After this submission' : 'Your record'}
+                          </p>
+                          {adding && (
+                            <p className={`text-[11px] font-semibold uppercase tracking-[0.12em] ${
+                              darkMode ? 'text-gold-300' : 'text-gold-600'
+                            }`}>
+                              +{totalHours.toFixed(1)} hrs
+                            </p>
+                          )}
                         </div>
-                        <div className={`h-2 rounded-full overflow-hidden mb-2 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+
+                        {/* Headline total */}
+                        <div className="mt-3 flex items-baseline gap-3">
+                          <span className={`font-display text-5xl font-semibold leading-none tabular-nums ${
+                            darkMode ? 'text-white' : 'text-navy-900'
+                          }`}>
+                            {projected.total.toFixed(1)}
+                          </span>
+                          <span className={`text-sm ${darkMode ? 'text-navy-200/70' : 'text-navy-800/60'}`}>
+                            of 30 hrs
+                          </span>
+                          {adding && (
+                            <span className={`ml-auto text-sm tabular-nums line-through ${
+                              darkMode ? 'text-navy-200/40' : 'text-navy-800/35'
+                            }`}>
+                              {cur.totalHours.toFixed(1)}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Progress: what is banked, then what this adds */}
+                        <div className={`mt-4 flex h-2 overflow-hidden rounded-full ${
+                          darkMode ? 'bg-white/10' : 'bg-navy-900/10'
+                        }`}>
                           <div
-                            className="h-full rounded-full bg-blue-500"
-                            style={{ width: `${Math.min((selectedMemberCurrentHours.totalHours / 30) * 100, 100)}%` }}
+                            className={`h-full transition-all duration-500 ${
+                              darkMode ? 'bg-navy-300' : 'bg-navy-600'
+                            }`}
+                            style={{ width: `${Math.min((cur.totalHours / 30) * 100, 100)}%` }}
+                          />
+                          <div
+                            className="h-full bg-gold-400 transition-all duration-500"
+                            style={{
+                              width: `${Math.max(
+                                0,
+                                Math.min((projected.total / 30) * 100, 100) -
+                                  Math.min((cur.totalHours / 30) * 100, 100)
+                              )}%`,
+                            }}
                           />
                         </div>
-                        <p className={`text-xs text-center ${darkMode ? 'text-blue-300' : 'text-blue-600'}`}>
-                          {selectedMemberCurrentHours.totalHours >= 30
-                            ? '🎉 Year goal complete!'
-                            : selectedMemberCurrentHours.totalHours >= 10
-                            ? `${(30 - selectedMemberCurrentHours.totalHours).toFixed(1)} hrs until year goal (10-hr semester goal done ✓)`
-                            : `${(10 - selectedMemberCurrentHours.totalHours).toFixed(1)} hrs until 1st semester goal · ${(30 - selectedMemberCurrentHours.totalHours).toFixed(1)} hrs until year goal`
-                          }
+
+                        <p className={`mt-2.5 text-[13px] ${darkMode ? 'text-navy-200/75' : 'text-navy-800/70'}`}>
+                          {projected.total >= 30
+                            ? 'Year goal complete.'
+                            : projected.total >= 10
+                            ? `${(30 - projected.total).toFixed(1)} hrs to the year goal. Semester goal met.`
+                            : `${(10 - projected.total).toFixed(1)} hrs to the semester goal, ${(30 - projected.total).toFixed(1)} to the year.`}
                         </p>
-                        <p className={`text-xs text-center mt-1 font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          Enter hours <em>to add</em> in the fields below
-                        </p>
+
+                        {/* Category breakdown */}
+                        <dl className={`mt-4 grid grid-cols-3 gap-px overflow-hidden rounded-xl ${
+                          darkMode ? 'bg-white/10' : 'bg-navy-900/10'
+                        }`}>
+                          {[
+                            { label: 'Summer', now: projected.summer, add: Math.min(rawSummerHours, Math.max(0, 8 - cur.summerHours)) },
+                            { label: 'Chapter', now: projected.chapter, add: chapterHours },
+                            { label: 'Other', now: projected.other, add: otherHours },
+                          ].map((row) => (
+                            <div
+                              key={row.label}
+                              className={`px-3 py-3 text-center ${darkMode ? 'bg-navy-900' : 'bg-white'}`}
+                            >
+                              <p className={`font-display text-xl font-semibold tabular-nums ${
+                                darkMode ? 'text-white' : 'text-navy-900'
+                              }`}>
+                                {row.now.toFixed(1)}
+                              </p>
+                              <p className={`mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] ${
+                                darkMode ? 'text-navy-200/60' : 'text-navy-800/55'
+                              }`}>
+                                {row.label}
+                              </p>
+                              {row.add > 0 && (
+                                <p className={`mt-1 text-[11px] font-semibold tabular-nums ${
+                                  darkMode ? 'text-gold-300' : 'text-gold-600'
+                                }`}>
+                                  +{row.add.toFixed(1)}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </dl>
+
+                        {!adding && (
+                          <p className={`mt-3 text-[13px] ${darkMode ? 'text-navy-200/60' : 'text-navy-800/55'}`}>
+                            Enter the hours you&rsquo;re adding below and this will update.
+                          </p>
+                        )}
+                        {projected.summerRaw > 8 && (
+                          <p className={`mt-3 text-[13px] ${darkMode ? 'text-gold-300' : 'text-gold-700'}`}>
+                            Summer hours count toward the total up to 8, so{' '}
+                            {(projected.summerRaw - 8).toFixed(1)} of them won&rsquo;t count.
+                          </p>
+                        )}
                       </motion.div>
                     )}
-                    
+
                     {!selectedMember && !hasSearched && nameSearchQuery.length >= 2 && (
-                      <p className={`text-sm mt-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                      <p className={`text-sm mt-2 ${darkMode ? 'text-gold-300' : 'text-blue-600'}`}>
                         👆 Click <strong>Find</strong> to search for your name
                       </p>
                     )}
                     
                     {existingMembers.length === 0 && !isLoadingMembers && (
-                      <p className={`text-sm mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                      <p className={`text-sm mt-2 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>
                         No members found. Go back and select "No, this is my first time" to create your profile.
                       </p>
                     )}
                   </div>
                 ) : (
                   <div>
-                    <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>
                       Full Name <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -1358,8 +1447,8 @@ export function SubmitHoursPage() {
                       placeholder="Enter your full name"
                       className={`w-full px-4 py-3 rounded-xl border transition-all ${
                         darkMode 
-                          ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
-                          : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                          ? 'bg-navy-900 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20' 
+                          : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
                       }`}
                     />
                   </div>
@@ -1367,7 +1456,7 @@ export function SubmitHoursPage() {
 
                 {/* Grade */}
                 <div>
-                  <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>
                     Grade Level <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -1377,8 +1466,8 @@ export function SubmitHoursPage() {
                     onChange={handleChange}
                     className={`w-full px-4 py-3 rounded-xl border transition-all ${
                       darkMode 
-                        ? 'bg-gray-800 border-gray-700 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
-                        : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                        ? 'bg-navy-900 border-white/10 text-white focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20' 
+                        : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
                     }`}
                   >
                     <option value="">Select your grade</option>
@@ -1392,7 +1481,7 @@ export function SubmitHoursPage() {
                 {/* Hours Grid */}
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>
                       Summer Hours
                     </label>
                     <input
@@ -1406,14 +1495,14 @@ export function SubmitHoursPage() {
                       placeholder="0"
                       className={`w-full px-4 py-3 rounded-xl border transition-all ${
                         darkMode 
-                          ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
-                          : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                          ? 'bg-navy-900 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20' 
+                          : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
                       }`}
                     />
-                    <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Max 8 count</p>
+                    <p className={`text-xs mt-1 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>Max 8 count</p>
                   </div>
                   <div>
-                    <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>
                       Chapter Hours
                     </label>
                     <input
@@ -1427,14 +1516,14 @@ export function SubmitHoursPage() {
                       placeholder="0"
                       className={`w-full px-4 py-3 rounded-xl border transition-all ${
                         darkMode 
-                          ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
-                          : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                          ? 'bg-navy-900 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20' 
+                          : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
                       }`}
                     />
-                    <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Min 6 required</p>
+                    <p className={`text-xs mt-1 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>Min 6 required</p>
                   </div>
                   <div>
-                    <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>
                       Other Hours
                     </label>
                     <input
@@ -1448,20 +1537,20 @@ export function SubmitHoursPage() {
                       placeholder="0"
                       className={`w-full px-4 py-3 rounded-xl border transition-all ${
                         darkMode 
-                          ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
-                          : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                          ? 'bg-navy-900 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20' 
+                          : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
                       }`}
                     />
-                    <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Non-chapter</p>
+                    <p className={`text-xs mt-1 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>Non-chapter</p>
                   </div>
                 </div>
 
-                {/* Total Display */}
-                {(totalHours > 0 || summerHoursExceeded) && (
+                {/* Total Display - returning members see this in their record panel above */}
+                {(totalHours > 0 || summerHoursExceeded) && !cur && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className={`p-5 rounded-2xl ${darkMode ? 'bg-gradient-to-br from-gray-800 to-gray-800/50 border border-gray-700' : 'bg-gradient-to-br from-white to-blue-50 border border-gray-200 shadow-lg'}`}
+                    className={`p-5 rounded-2xl ${darkMode ? 'bg-gradient-to-br from-navy-900 to-navy-900/50 border border-white/10' : 'bg-gradient-to-br from-white to-blue-50 border border-gray-200 shadow-lg'}`}
                   >
                     {summerHoursExceeded && (
                       <div className={`mb-4 p-3 rounded-xl text-xs font-medium flex items-center gap-2 ${darkMode ? 'bg-amber-900/30 text-amber-400 border border-amber-500/20' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
@@ -1472,19 +1561,19 @@ export function SubmitHoursPage() {
                     
                     {/* Main Hours Display */}
                     <div className="text-center mb-4">
-                      <p className={`text-xs uppercase tracking-wider font-semibold mb-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                      <p className={`text-xs uppercase tracking-wider font-semibold mb-1 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>
                         Total Effective Hours
                       </p>
                       <p className={`text-4xl font-bold ${
-                        totalHours >= 30 ? 'text-emerald-500' : totalHours >= 10 ? (darkMode ? 'text-blue-400' : 'text-blue-600') : (darkMode ? 'text-white' : 'text-gray-900')
+                        totalHours >= 30 ? 'text-emerald-500' : totalHours >= 10 ? (darkMode ? 'text-gold-300' : 'text-blue-600') : (darkMode ? 'text-white' : 'text-gray-900')
                       }`}>
                         {totalHours.toFixed(1)}
-                        <span className={`text-lg font-normal ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}> / 30</span>
+                        <span className={`text-lg font-normal ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}> / 30</span>
                       </p>
                     </div>
 
                     {/* Progress Bar */}
-                    <div className={`h-3 rounded-full overflow-hidden mb-4 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                    <div className={`h-3 rounded-full overflow-hidden mb-4 ${darkMode ? 'bg-navy-800' : 'bg-gray-200'}`}>
                       <div className="h-full flex">
                         {/* First 10 hours (1st semester) */}
                         <div 
@@ -1514,12 +1603,12 @@ export function SubmitHoursPage() {
                       <div className={`p-3 rounded-xl text-center ${
                         totalHours >= 10 
                           ? (darkMode ? 'bg-emerald-900/30 border border-emerald-500/30' : 'bg-emerald-50 border border-emerald-200')
-                          : (darkMode ? 'bg-gray-700/50 border border-gray-600' : 'bg-gray-100 border border-gray-200')
+                          : (darkMode ? 'bg-navy-800/50 border border-white/10' : 'bg-gray-100 border border-gray-200')
                       }`}>
                         <p className={`text-xs font-semibold mb-1 ${
                           totalHours >= 10 
                             ? (darkMode ? 'text-emerald-400' : 'text-emerald-700')
-                            : (darkMode ? 'text-gray-400' : 'text-gray-500')
+                            : (darkMode ? 'text-navy-200/75' : 'text-navy-200/60')
                         }`}>
                           1st Semester
                         </p>
@@ -1538,12 +1627,12 @@ export function SubmitHoursPage() {
                       <div className={`p-3 rounded-xl text-center ${
                         totalHours >= 30 
                           ? (darkMode ? 'bg-emerald-900/30 border border-emerald-500/30' : 'bg-emerald-50 border border-emerald-200')
-                          : (darkMode ? 'bg-gray-700/50 border border-gray-600' : 'bg-gray-100 border border-gray-200')
+                          : (darkMode ? 'bg-navy-800/50 border border-white/10' : 'bg-gray-100 border border-gray-200')
                       }`}>
                         <p className={`text-xs font-semibold mb-1 ${
                           totalHours >= 30 
                             ? (darkMode ? 'text-emerald-400' : 'text-emerald-700')
-                            : (darkMode ? 'text-gray-400' : 'text-gray-500')
+                            : (darkMode ? 'text-navy-200/75' : 'text-navy-200/60')
                         }`}>
                           Full Year
                         </p>
@@ -1560,7 +1649,7 @@ export function SubmitHoursPage() {
                     </div>
 
                     {/* Info Text */}
-                    <p className={`text-xs mt-3 text-center ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                    <p className={`text-xs mt-3 text-center ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>
                       10 hours due by end of 1st semester • 20 more due by end of year
                     </p>
                   </motion.div>
@@ -1568,7 +1657,7 @@ export function SubmitHoursPage() {
 
                 {/* Inducted Status */}
                 <div>
-                  <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>
                     Induction Status <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -1578,8 +1667,8 @@ export function SubmitHoursPage() {
                     onChange={handleChange}
                     className={`w-full px-4 py-3 rounded-xl border transition-all ${
                       darkMode 
-                        ? 'bg-gray-800 border-gray-700 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
-                        : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                        ? 'bg-navy-900 border-white/10 text-white focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20' 
+                        : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
                     }`}
                   >
                     <option value="">Select status</option>
@@ -1590,14 +1679,14 @@ export function SubmitHoursPage() {
 
                 {/* Image Proof Upload */}
                 <div className={`p-6 rounded-xl border-2 border-dashed ${
-                  darkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-300 bg-gray-50'
+                  darkMode ? 'border-white/10 bg-navy-900/50' : 'border-gray-300 bg-gray-50'
                 }`}>
-                  <label className={`block text-sm font-bold mb-1 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <label className={`block text-sm font-bold mb-1 uppercase tracking-wide ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>
                     Proof Of Volunteering <span className="text-red-500">*</span>
                   </label>
-                  <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  <p className={`text-xs mb-3 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>
                     Upload a photo from your event, or a screenshot of an email with an organizer/advisor confirming your participation. If you have trouble getting your image accepted or forgot to take proof, email{' '}
-                    <a href="mailto:1060801@lwsd.org" className={`font-semibold underline ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>1060801@lwsd.org</a>{' '}
+                    <a href="mailto:1060801@lwsd.org" className={`font-semibold underline ${darkMode ? 'text-gold-300' : 'text-blue-600'}`}>1060801@lwsd.org</a>{' '}
                     and you will receive an override code.
                   </p>
                   
@@ -1607,10 +1696,10 @@ export function SubmitHoursPage() {
                       className={`flex flex-col items-center justify-center cursor-pointer py-8 px-4 rounded-lg transition-all border-2 border-dashed ${
                         isDragging
                           ? darkMode
-                            ? 'bg-blue-900/30 border-blue-500'
+                            ? 'bg-navy-900/30 border-blue-500'
                             : 'bg-blue-50 border-blue-400'
                           : darkMode
-                          ? 'hover:bg-gray-700/50 border-gray-700'
+                          ? 'hover:bg-navy-800/50 border-white/10'
                           : 'hover:bg-gray-100 border-gray-200'
                       }`}
                       onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -1618,11 +1707,11 @@ export function SubmitHoursPage() {
                       onDragLeave={() => setIsDragging(false)}
                       onDrop={handleImageDrop}
                     >
-                      <Upload className={`w-12 h-12 mb-3 ${isDragging ? 'text-blue-400' : darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-                      <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <Upload className={`w-12 h-12 mb-3 ${isDragging ? 'text-gold-300' : darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`} />
+                      <p className={`text-sm font-medium mb-1 ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>
                         {isDragging ? 'Drop image here' : 'Drag & drop or click to upload'}
                       </p>
-                      <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                      <p className={`text-xs ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>
                         JPG, PNG, or WebP (Max 5MB)
                       </p>
                       <input
@@ -1652,7 +1741,7 @@ export function SubmitHoursPage() {
                             setAdminCode('');
                           }}
                           className={`absolute top-2 right-2 p-2 rounded-lg ${
-                            darkMode ? 'bg-gray-900/80 text-white hover:bg-gray-900' : 'bg-white/80 text-gray-900 hover:bg-white'
+                            darkMode ? 'bg-navy-950/80 text-white hover:bg-navy-950' : 'bg-white/80 text-gray-900 hover:bg-white'
                           }`}
                         >
                           <AlertCircle className="w-5 h-5" />
@@ -1661,16 +1750,16 @@ export function SubmitHoursPage() {
 
                       {/* Sentence Frame - Structured Activity Description */}
                       <div className="space-y-3">
-                        <label className={`block text-sm font-bold mb-1 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <label className={`block text-sm font-bold mb-1 uppercase tracking-wide ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>
                           Describe Your Activity <span className="text-red-500">*</span>
                         </label>
-                        <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                        <p className={`text-xs mb-3 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>
                           Fill in every field below - all of them are required.
                         </p>
 
                         {/* Organization */}
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>I volunteered with</span>
+                          <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>I volunteered with</span>
                           <input
                             type="text"
                             value={sfOrganization}
@@ -1678,15 +1767,15 @@ export function SubmitHoursPage() {
                             placeholder="e.g. Kirkland Food Bank"
                             className={`flex-1 min-w-[160px] px-3 py-2 rounded-lg border text-sm transition-all ${
                               darkMode
-                                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
-                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                                ? 'bg-navy-900 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20'
+                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
                             }`}
                           />
                         </div>
 
                         {/* Activity */}
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>where I</span>
+                          <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>where I</span>
                           <input
                             type="text"
                             value={sfActivity}
@@ -1694,15 +1783,15 @@ export function SubmitHoursPage() {
                             placeholder="e.g. sorted food donations and stocked shelves"
                             className={`flex-1 min-w-[160px] px-3 py-2 rounded-lg border text-sm transition-all ${
                               darkMode
-                                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
-                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                                ? 'bg-navy-900 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20'
+                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
                             }`}
                           />
                         </div>
 
                         {/* Date */}
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>on</span>
+                          <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>on</span>
                           <input
                             type="text"
                             value={sfDate}
@@ -1710,15 +1799,15 @@ export function SubmitHoursPage() {
                             placeholder="e.g. March 15, 2026"
                             className={`flex-1 min-w-[140px] px-3 py-2 rounded-lg border text-sm transition-all ${
                               darkMode
-                                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
-                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                                ? 'bg-navy-900 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20'
+                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
                             }`}
                           />
                         </div>
 
                         {/* Photo description */}
                         <div className="flex items-start gap-2 flex-wrap">
-                          <span className={`text-sm font-medium whitespace-nowrap mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>My photo/email shows</span>
+                          <span className={`text-sm font-medium whitespace-nowrap mt-2 ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>My photo/email shows</span>
                           <input
                             type="text"
                             value={sfPhotoShows}
@@ -1726,18 +1815,18 @@ export function SubmitHoursPage() {
                             placeholder="e.g. me at the food bank, or an email from an organizer confirming my volunteer shift"
                             className={`flex-1 min-w-[160px] px-3 py-2 rounded-lg border text-sm transition-all ${
                               darkMode
-                                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
-                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                                ? 'bg-navy-900 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20'
+                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
                             }`}
                           />
                         </div>
-                        <p className={`text-xs -mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                        <p className={`text-xs -mt-1 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>
                           A photo at the event is ideal, but a screenshot of an email with an organizer/advisor confirming your participation is also accepted.
                         </p>
 
                         {/* Supervisor Name */}
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Supervisor name</span>
+                          <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>Supervisor name</span>
                           <input
                             type="text"
                             value={sfSupervisor}
@@ -1745,15 +1834,15 @@ export function SubmitHoursPage() {
                             placeholder="e.g. John Doe"
                             className={`flex-1 min-w-[160px] px-3 py-2 rounded-lg border text-sm transition-all ${
                               darkMode
-                                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
-                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                                ? 'bg-navy-900 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20'
+                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
                             }`}
                           />
                         </div>
 
                         {/* Supervisor Contact */}
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Supervisor contact</span>
+                          <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>Supervisor contact</span>
                           <input
                             type="text"
                             value={sfSupervisorContact}
@@ -1761,8 +1850,8 @@ export function SubmitHoursPage() {
                             placeholder="e.g. jdoe@email.com or (425) 555-1234"
                             className={`flex-1 min-w-[180px] px-3 py-2 rounded-lg border text-sm transition-all ${
                               darkMode
-                                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
-                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                                ? 'bg-navy-900 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20'
+                                : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
                             }`}
                           />
                         </div>
@@ -1770,7 +1859,7 @@ export function SubmitHoursPage() {
                         {/* Preview of generated description */}
                         {sentenceFrameFilled && (
                           <div className={`mt-2 p-3 rounded-lg text-xs italic ${
-                            darkMode ? 'bg-gray-800/50 text-gray-400 border border-gray-700/50' : 'bg-gray-100 text-gray-500 border border-gray-200'
+                            darkMode ? 'bg-navy-900/50 text-navy-200/75 border border-white/10/50' : 'bg-gray-100 text-navy-200/60 border border-gray-200'
                           }`}>
                             {activityDescription}
                           </div>
@@ -1779,7 +1868,7 @@ export function SubmitHoursPage() {
 
                       {/* Admin Code (Optional) */}
                       <div>
-                        <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>
                           Admin Override Code (Optional)
                         </label>
                         <input
@@ -1789,11 +1878,11 @@ export function SubmitHoursPage() {
                           placeholder="Enter admin code to bypass verification"
                           className={`w-full px-4 py-3 rounded-xl border transition-all ${
                             darkMode 
-                              ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20' 
-                              : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                              ? 'bg-navy-900 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20' 
+                              : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
                           }`}
                         />
-                        <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                        <p className={`text-xs mt-1 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>
                           NHS officers only. Leave blank if you're a regular member.
                         </p>
                       </div>
@@ -1880,12 +1969,12 @@ export function SubmitHoursPage() {
               </form>
 
               {/* View Leaderboard + My Hours Links */}
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap justify-center gap-5">
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-white/10 flex flex-wrap justify-center gap-5">
                 <button
                   onClick={() => navigate('/hours-tracker')}
                   className={`inline-flex items-center gap-2 font-medium transition-colors ${
                     darkMode 
-                      ? 'text-gray-400 hover:text-white' 
+                      ? 'text-navy-200/75 hover:text-white' 
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
@@ -1896,7 +1985,7 @@ export function SubmitHoursPage() {
                   onClick={() => navigate('/my-hours')}
                   className={`inline-flex items-center gap-2 font-medium transition-colors ${
                     darkMode 
-                      ? 'text-blue-400 hover:text-blue-300' 
+                      ? 'text-gold-300 hover:text-gold-200' 
                       : 'text-blue-600 hover:text-blue-800'
                   }`}
                 >
@@ -1909,20 +1998,20 @@ export function SubmitHoursPage() {
               {/* Hours Requirements */}
               <div className={`rounded-3xl border p-5 ${
                 darkMode 
-                  ? 'bg-gray-900/80 border-gray-800' 
+                  ? 'bg-navy-950/80 border-white/10' 
                   : 'bg-white border-gray-200 shadow-lg'
               }`}>
                 <h3 className={`text-lg font-semibold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                   Hours Requirements
                 </h3>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  <div className={`p-3 rounded-xl text-center min-h-[88px] flex flex-col justify-between ${darkMode ? 'bg-blue-900/30' : 'bg-blue-50'}`}>
-                    <p className={`text-2xl font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>8</p>
-                    <p className={`text-xs ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>Max Summer</p>
+                  <div className={`p-3 rounded-xl text-center min-h-[88px] flex flex-col justify-between ${darkMode ? 'bg-navy-900/30' : 'bg-blue-50'}`}>
+                    <p className={`text-2xl font-bold ${darkMode ? 'text-gold-300' : 'text-blue-600'}`}>8</p>
+                    <p className={`text-xs ${darkMode ? 'text-gold-200' : 'text-blue-700'}`}>Max Summer</p>
                   </div>
-                  <div className={`p-3 rounded-xl text-center min-h-[88px] flex flex-col justify-between ${darkMode ? 'bg-purple-900/30' : 'bg-purple-50'}`}>
-                    <p className={`text-2xl font-bold ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>6</p>
-                    <p className={`text-xs ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>Chapter Min</p>
+                  <div className={`p-3 rounded-xl text-center min-h-[88px] flex flex-col justify-between ${darkMode ? 'bg-navy-900/30' : 'bg-blue-50'}`}>
+                    <p className={`text-2xl font-bold ${darkMode ? 'text-gold-300' : 'text-blue-600'}`}>6</p>
+                    <p className={`text-xs ${darkMode ? 'text-gold-200' : 'text-blue-700'}`}>Chapter Min</p>
                   </div>
                   <div className={`p-3 rounded-xl text-center min-h-[88px] flex flex-col justify-between col-span-2 sm:col-span-1 ${darkMode ? 'bg-emerald-900/30' : 'bg-emerald-50'}`}>
                     <p className={`text-2xl font-bold ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>30</p>
@@ -1941,7 +2030,7 @@ export function SubmitHoursPage() {
           >
             <div className={`h-full rounded-3xl border p-5 lg:p-6 ${
               darkMode 
-                ? 'bg-gradient-to-br from-gray-900 to-gray-800 border-gray-700' 
+                ? 'bg-gradient-to-br from-navy-950 to-navy-900 border-white/10' 
                 : 'bg-gradient-to-br from-white to-blue-50 border-gray-200 shadow-xl'
             }`}>
               <h2 className={`text-2xl font-bold mb-5 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -1955,17 +2044,17 @@ export function SubmitHoursPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 + index * 0.1 }}
-                    className={`p-3.5 rounded-xl ${darkMode ? 'bg-gray-800/50' : 'bg-white shadow-sm border border-gray-100'}`}
+                    className={`p-3.5 rounded-xl ${darkMode ? 'bg-navy-900/50' : 'bg-white shadow-sm border border-gray-100'}`}
                   >
                     <div className="flex items-start gap-4">
-                      <div className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                      <div className={`p-2 rounded-lg ${darkMode ? 'bg-navy-800' : 'bg-gray-100'}`}>
                         <rule.icon className={`w-5 h-5 ${rule.color}`} />
                       </div>
                       <div>
                         <h3 className={`font-semibold mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                           {rule.title}
                         </h3>
-                        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        <p className={`text-sm ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>
                           {rule.description}
                         </p>
                       </div>

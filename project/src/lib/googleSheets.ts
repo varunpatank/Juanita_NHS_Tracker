@@ -1,18 +1,14 @@
 // Google Sheets API Configuration
-const GOOGLE_SHEETS_API_KEY = 'AIzaSyBNHlPxx4aXm2EEe4xovwnCrJJNPHJ-di4';
-const SPREADSHEET_ID = '12xjBJY7Rg1TClIu1qSwEiIANwrXiC3wuD9iyVTKcwFI';
+// All of these live in project/.env (which is gitignored) so they stay out of
+// the repo. See .env.example for the variable names.
+const GOOGLE_SHEETS_API_KEY = import.meta.env.VITE_GOOGLE_SHEETS_API_KEY;
+const SPREADSHEET_ID = import.meta.env.VITE_SPREADSHEET_ID;
 const SHEET_NAME = 'Sheet1';
 
-// Google Apps Script Web App URL for writing data
-// TO CONFIGURE:
-// 1. Open your Google Sheet: https://docs.google.com/spreadsheets/d/12xjBJY7Rg1TClIu1qSwEiIANwrXiC3wuD9iyVTKcwFI
-// 2. Go to Extensions > Apps Script
-// 3. Delete any existing code and paste the code from the bottom of this file
-// 4. Click Deploy > New Deployment > Web App
-// 5. Set "Execute as: Me" and "Who has access: Anyone"
-// 6. Click Deploy and copy the URL
-// 7. Paste the URL below (it looks like: https://script.google.com/macros/s/...../exec)
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwYTKwI-HXnyxr4iKte0TKWW7NWxIVZPM9AeCodM3s3NGXYcOMJLzoLJo7JzNiB8JcF/exec';
+// Google Apps Script Web App URL for writing data.
+// Deploy: Apps Script editor > Deploy > Manage deployments > New version,
+// then put the /exec URL in .env as VITE_APPS_SCRIPT_URL.
+const APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
 
 // Member hours tracking interface (for leaderboard)
 // Columns: Name | Grade | Inducted | Summer Hours | Chapter Hours | Other Hours | Total Hours
@@ -48,6 +44,11 @@ export interface HoursSubmission {
  * Sheet format: Name | Grade | Inducted | Summer Hours | Chapter Hours | Other Hours | Total Hours
  */
 export async function fetchMembers(): Promise<MemberHours[]> {
+  if (!GOOGLE_SHEETS_API_KEY || !SPREADSHEET_ID) {
+    console.error('Missing VITE_GOOGLE_SHEETS_API_KEY or VITE_SPREADSHEET_ID in project/.env');
+    return [];
+  }
+
   try {
     const range = `${SHEET_NAME}!A:G`;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${GOOGLE_SHEETS_API_KEY}`;
@@ -86,8 +87,8 @@ export async function fetchMembers(): Promise<MemberHours[]> {
  */
 export async function submitHours(submission: HoursSubmission): Promise<boolean> {
   // If Apps Script URL is not configured, throw helpful error
-  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('YOUR_SCRIPT_ID_HERE')) {
-    throw new Error('Google Apps Script not configured. Please set up the Apps Script Web App.');
+  if (!APPS_SCRIPT_URL) {
+    throw new Error('Submissions are not configured. Set VITE_APPS_SCRIPT_URL in project/.env and rebuild.');
   }
 
   try {
@@ -134,23 +135,26 @@ export async function submitHours(submission: HoursSubmission): Promise<boolean>
  * Check if the Apps Script is configured
  */
 export function isWriteEnabled(): boolean {
-  return !APPS_SCRIPT_URL.includes('YOUR_SCRIPT_ID_HERE');
+  return Boolean(APPS_SCRIPT_URL);
 }
 
 // ============================================
-// GOOGLE APPS SCRIPT CODE (v5 - detail fields, single sheet)
+// GOOGLE APPS SCRIPT CODE (v6 - detail history, no Last Updated column)
 // ============================================
 // Paste into Extensions > Apps Script, then Deploy > Manage deployments >
 // edit the existing deployment > Version: "New version" > Deploy.
 // Sheet1 columns:
 //   A Name | B Grade | C Inducted | D Summer | E Chapter | F Other | G Total
 //   H Organization | I Activity | J Date of Service | K Photo Shows
-//   L Supervisor | M Supervisor Contact | N Last Updated
+//   L Supervisor | M Supervisor Contact
+// Each detail column keeps a history: the newest entry is first, older
+// entries follow after " | ", so nothing a member submitted is ever lost.
 /*
 
-var SPREADSHEET_ID = '12xjBJY7Rg1TClIu1qSwEiIANwrXiC3wuD9iyVTKcwFI';
+var SPREADSHEET_ID = 'PASTE_YOUR_SPREADSHEET_ID_HERE';
 var SHEET_NAME = 'Sheet1';
-var COLS = 14; // A..N
+var COLS = 13; // A..M
+var SEP = ' | ';
 
 function doGet(e) {
   try {
@@ -184,8 +188,7 @@ function handleSubmit(data) {
     if (!name) throw new Error('Missing name');
 
     // Only look at column A to find the last real member row. getDataRange()
-    // can stretch far past the real data if any stray cell was ever touched,
-    // which is what made appended rows land hundreds of rows down the sheet.
+    // can stretch far past the real data if any stray cell was ever touched.
     var lastRow = getLastNameRow(sheet);
     var names = lastRow >= 2
       ? sheet.getRange(2, 1, lastRow - 1, 1).getValues()
@@ -206,14 +209,29 @@ function handleSubmit(data) {
     var grade = data.grade || '';
     var inducted = data.inducted || '';
 
+    // Detail history, newest first
+    var org = (data.organization || '').toString().trim();
+    var act = (data.activity || '').toString().trim();
+    var when = (data.serviceDate || '').toString().trim();
+    var shows = (data.photoShows || '').toString().trim();
+    var sup = (data.supervisor || '').toString().trim();
+    var supc = (data.supervisorContact || '').toString().trim();
+
     if (targetRow) {
-      // Existing member: add the new hours onto what is already there
+      // Existing member: add hours on, and push details onto the front
       var cur = sheet.getRange(targetRow, 1, 1, COLS).getValues()[0];
       summer += num(cur[3]);
       chapter += num(cur[4]);
       other += num(cur[5]);
       if (!grade) grade = cur[1];
       if (!inducted) inducted = cur[2];
+
+      org = prepend(org, cur[7]);
+      act = prepend(act, cur[8]);
+      when = prepend(when, cur[9]);
+      shows = prepend(shows, cur[10]);
+      sup = prepend(sup, cur[11]);
+      supc = prepend(supc, cur[12]);
     } else {
       targetRow = lastRow + 1; // first empty row under the real data
     }
@@ -221,26 +239,24 @@ function handleSubmit(data) {
     var total = Math.min(summer, 8) + chapter + other; // summer capped at 8
 
     sheet.getRange(targetRow, 1, 1, COLS).setValues([[
-      name,
-      grade,
-      inducted,
-      summer,
-      chapter,
-      other,
-      total,
-      data.organization || '',
-      data.activity || '',
-      data.serviceDate || '',
-      data.photoShows || '',
-      data.supervisor || '',
-      data.supervisorContact || '',
-      new Date()
+      name, grade, inducted, summer, chapter, other, total,
+      org, act, when, shows, sup, supc
     ]]);
 
     return {success: true, row: targetRow, totalHours: total};
   } finally {
     lock.releaseLock();
   }
+}
+
+// Newest entry first, previous history kept behind it.
+function prepend(fresh, existing) {
+  var old = (existing === null || existing === undefined)
+    ? ''
+    : existing.toString().trim();
+  if (!fresh) return old;
+  if (!old) return fresh;
+  return fresh + SEP + old;
 }
 
 function getLastNameRow(sheet) {

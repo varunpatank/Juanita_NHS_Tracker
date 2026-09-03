@@ -48,7 +48,7 @@ export function MyHoursPage() {
 
   const getHoursColor = (hrs: number) => {
     if (hrs >= 30) return 'text-emerald-500';
-    if (hrs >= 20) return darkMode ? 'text-blue-400' : 'text-blue-600';
+    if (hrs >= 20) return darkMode ? 'text-gold-300' : 'text-blue-600';
     if (hrs >= 10) return darkMode ? 'text-amber-400' : 'text-amber-600';
     return darkMode ? 'text-red-400' : 'text-red-600';
   };
@@ -56,7 +56,7 @@ export function MyHoursPage() {
   return (
     <div className={`min-h-screen ${
       darkMode
-        ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950'
+        ? 'bg-gradient-to-br from-navy-950 via-navy-950 to-navy-950'
         : 'bg-gray-50'
     }`}>
       <motion.div
@@ -81,11 +81,11 @@ export function MyHoursPage() {
           transition={{ duration: 0.4, delay: 0.1 }}
           className={`p-6 rounded-2xl border mb-6 ${
             darkMode
-              ? 'bg-gray-800/60 border-gray-700/60'
+              ? 'bg-navy-900/60 border-white/10/60'
               : 'bg-white border-gray-200 shadow-sm'
           }`}
         >
-          <label className={`block text-sm font-bold mb-3 uppercase tracking-wide ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+          <label className={`block text-sm font-bold mb-3 uppercase tracking-wide ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>
             Enter Your Full Name
           </label>
           <div className="flex gap-3">
@@ -97,8 +97,8 @@ export function MyHoursPage() {
               placeholder="e.g. Jane Smith"
               className={`flex-1 px-4 py-3 rounded-xl border transition-all ${
                 darkMode
-                  ? 'bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
-                  : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:bg-white'
+                  ? 'bg-navy-950 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20'
+                  : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
               }`}
             />
             <button
@@ -108,8 +108,8 @@ export function MyHoursPage() {
                 nameQuery.trim().length >= 2 && !isLoading
                   ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
                   : darkMode
-                  ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  ? 'bg-navy-800 text-navy-200/60 cursor-not-allowed'
+                  : 'bg-gray-200 text-navy-200/75 cursor-not-allowed'
               }`}
             >
               {isLoading ? (
@@ -120,7 +120,7 @@ export function MyHoursPage() {
               Look Up
             </button>
           </div>
-          <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+          <p className={`text-xs mt-2 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>
             Enter your name exactly as it appears in the system (case-insensitive)
           </p>
         </motion.div>
@@ -135,7 +135,7 @@ export function MyHoursPage() {
               exit={{ opacity: 0 }}
               className={`p-6 rounded-2xl border text-center ${
                 darkMode
-                  ? 'bg-gray-800/60 border-gray-700/60'
+                  ? 'bg-navy-900/60 border-white/10/60'
                   : 'bg-white border-gray-200 shadow-sm'
               }`}
             >
@@ -143,7 +143,7 @@ export function MyHoursPage() {
               <h3 className={`text-lg font-bold mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                 Name Not Found
               </h3>
-              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              <p className={`text-sm ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>
                 No record found for <strong>"{nameQuery}"</strong>. Make sure you type your name exactly as you registered. If you've never submitted hours, use the Submit Hours page to create your profile.
               </p>
             </motion.div>
@@ -160,7 +160,7 @@ export function MyHoursPage() {
               {/* Name & Status Card */}
               <div className={`p-5 rounded-2xl border ${
                 darkMode
-                  ? 'bg-gray-800/60 border-gray-700/60'
+                  ? 'bg-navy-900/60 border-white/10/60'
                   : 'bg-white border-gray-200 shadow-sm'
               }`}>
                 <div className="flex items-center justify-between flex-wrap gap-3">
@@ -168,7 +168,7 @@ export function MyHoursPage() {
                     <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       {result.name}
                     </h2>
-                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <p className={`text-sm ${darkMode ? 'text-navy-200/75' : 'text-navy-200/60'}`}>
                       {result.grade}
                     </p>
                   </div>
@@ -178,7 +178,7 @@ export function MyHoursPage() {
                     </span>
                   ) : (
                     <span className={`px-3 py-1.5 rounded-lg text-sm font-semibold border ${
-                      darkMode ? 'bg-gray-700 text-gray-400 border-gray-600' : 'bg-gray-100 text-gray-500 border-gray-200'
+                      darkMode ? 'bg-navy-800 text-navy-200/75 border-white/10' : 'bg-gray-100 text-navy-200/60 border-gray-200'
                     }`}>
                       Pending Induction
                     </span>
@@ -189,23 +189,23 @@ export function MyHoursPage() {
               {/* Total Hours + Progress */}
               <div className={`p-5 rounded-2xl border ${
                 darkMode
-                  ? 'bg-gray-800/60 border-gray-700/60'
+                  ? 'bg-navy-900/60 border-white/10/60'
                   : 'bg-white border-gray-200 shadow-sm'
               }`}>
-                <p className={`text-xs uppercase tracking-wider font-semibold mb-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                <p className={`text-xs uppercase tracking-wider font-semibold mb-1 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>
                   Total Hours
                 </p>
                 <div className="flex items-end gap-2 mb-3">
                   <span className={`text-5xl font-bold ${getHoursColor(result.totalHours)}`}>
                     {result.totalHours.toFixed(1)}
                   </span>
-                  <span className={`text-xl font-normal mb-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  <span className={`text-xl font-normal mb-1 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>
                     / {totalGoal}
                   </span>
                 </div>
 
                 {/* Progress bar */}
-                <div className={`h-4 rounded-full overflow-hidden mb-3 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                <div className={`h-4 rounded-full overflow-hidden mb-3 ${darkMode ? 'bg-navy-800' : 'bg-gray-200'}`}>
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${progress}%` }}
@@ -225,14 +225,14 @@ export function MyHoursPage() {
                   <div className={`p-3 rounded-xl text-center ${
                     semester1Done
                       ? (darkMode ? 'bg-emerald-900/30 border border-emerald-500/30' : 'bg-emerald-50 border border-emerald-200')
-                      : (darkMode ? 'bg-gray-700/50 border border-gray-600' : 'bg-gray-100 border border-gray-200')
+                      : (darkMode ? 'bg-navy-800/50 border border-white/10' : 'bg-gray-100 border border-gray-200')
                   }`}>
                     {semester1Done ? (
                       <CheckCircle className={`w-5 h-5 mx-auto mb-1 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
                     ) : (
-                      <Clock className={`w-5 h-5 mx-auto mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                      <Clock className={`w-5 h-5 mx-auto mb-1 ${darkMode ? 'text-navy-200/75' : 'text-navy-200/60'}`} />
                     )}
-                    <p className={`text-xs font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <p className={`text-xs font-semibold ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>
                       1st Semester
                     </p>
                     <p className={`text-sm font-bold ${
@@ -242,19 +242,19 @@ export function MyHoursPage() {
                     }`}>
                       {semester1Done ? '✓ Done' : `${Math.max(0, semester1Goal - result.totalHours).toFixed(1)} more needed`}
                     </p>
-                    <p className={`text-xs mt-0.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>10 hrs due 1st sem</p>
+                    <p className={`text-xs mt-0.5 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>10 hrs due 1st sem</p>
                   </div>
                   <div className={`p-3 rounded-xl text-center ${
                     yearDone
                       ? (darkMode ? 'bg-emerald-900/30 border border-emerald-500/30' : 'bg-emerald-50 border border-emerald-200')
-                      : (darkMode ? 'bg-gray-700/50 border border-gray-600' : 'bg-gray-100 border border-gray-200')
+                      : (darkMode ? 'bg-navy-800/50 border border-white/10' : 'bg-gray-100 border border-gray-200')
                   }`}>
                     {yearDone ? (
                       <CheckCircle className={`w-5 h-5 mx-auto mb-1 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
                     ) : (
-                      <Award className={`w-5 h-5 mx-auto mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                      <Award className={`w-5 h-5 mx-auto mb-1 ${darkMode ? 'text-navy-200/75' : 'text-navy-200/60'}`} />
                     )}
-                    <p className={`text-xs font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <p className={`text-xs font-semibold ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>
                       Full Year
                     </p>
                     <p className={`text-sm font-bold ${
@@ -264,7 +264,7 @@ export function MyHoursPage() {
                     }`}>
                       {yearDone ? '✓ Done' : `${Math.max(0, totalGoal - result.totalHours).toFixed(1)} more needed`}
                     </p>
-                    <p className={`text-xs mt-0.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>30 hrs due end of year</p>
+                    <p className={`text-xs mt-0.5 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>30 hrs due end of year</p>
                   </div>
                 </div>
               </div>
@@ -272,28 +272,28 @@ export function MyHoursPage() {
               {/* Hours Breakdown */}
               <div className={`p-5 rounded-2xl border ${
                 darkMode
-                  ? 'bg-gray-800/60 border-gray-700/60'
+                  ? 'bg-navy-900/60 border-white/10/60'
                   : 'bg-white border-gray-200 shadow-sm'
               }`}>
-                <h3 className={`text-sm font-bold uppercase tracking-wide mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <h3 className={`text-sm font-bold uppercase tracking-wide mb-4 ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>
                   Hours Breakdown
                 </h3>
                 <div className="grid grid-cols-3 gap-3">
-                  <div className={`p-3 rounded-xl text-center ${darkMode ? 'bg-blue-900/30' : 'bg-blue-50'}`}>
-                    <Clock className={`w-5 h-5 mx-auto mb-1 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
-                    <p className={`text-2xl font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                  <div className={`p-3 rounded-xl text-center ${darkMode ? 'bg-navy-900/30' : 'bg-blue-50'}`}>
+                    <Clock className={`w-5 h-5 mx-auto mb-1 ${darkMode ? 'text-gold-300' : 'text-blue-600'}`} />
+                    <p className={`text-2xl font-bold ${darkMode ? 'text-gold-300' : 'text-blue-600'}`}>
                       {result.summerHours}
                     </p>
-                    <p className={`text-xs font-semibold ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>Summer</p>
-                    <p className={`text-xs ${darkMode ? 'text-blue-400/60' : 'text-blue-500/70'}`}>max 8</p>
+                    <p className={`text-xs font-semibold ${darkMode ? 'text-gold-200' : 'text-blue-700'}`}>Summer</p>
+                    <p className={`text-xs ${darkMode ? 'text-gold-300/60' : 'text-blue-500/70'}`}>max 8</p>
                   </div>
-                  <div className={`p-3 rounded-xl text-center ${darkMode ? 'bg-purple-900/30' : 'bg-purple-50'}`}>
-                    <Users className={`w-5 h-5 mx-auto mb-1 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`} />
-                    <p className={`text-2xl font-bold ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+                  <div className={`p-3 rounded-xl text-center ${darkMode ? 'bg-navy-900/30' : 'bg-blue-50'}`}>
+                    <Users className={`w-5 h-5 mx-auto mb-1 ${darkMode ? 'text-gold-300' : 'text-blue-600'}`} />
+                    <p className={`text-2xl font-bold ${darkMode ? 'text-gold-300' : 'text-blue-600'}`}>
                       {result.chapterHours}
                     </p>
-                    <p className={`text-xs font-semibold ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>Chapter</p>
-                    <p className={`text-xs ${darkMode ? 'text-purple-400/60' : 'text-purple-500/70'}`}>min 6 req.</p>
+                    <p className={`text-xs font-semibold ${darkMode ? 'text-gold-200' : 'text-blue-700'}`}>Chapter</p>
+                    <p className={`text-xs ${darkMode ? 'text-gold-300/60' : 'text-blue-500/70'}`}>min 6 req.</p>
                   </div>
                   <div className={`p-3 rounded-xl text-center ${darkMode ? 'bg-emerald-900/30' : 'bg-emerald-50'}`}>
                     <Star className={`w-5 h-5 mx-auto mb-1 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
@@ -308,7 +308,7 @@ export function MyHoursPage() {
 
               {/* Info note */}
               <div className={`p-4 rounded-xl text-sm ${
-                darkMode ? 'bg-blue-900/20 border border-blue-500/20 text-blue-300' : 'bg-blue-50 border border-blue-100 text-blue-700'
+                darkMode ? 'bg-navy-900/20 border border-gold-400/20 text-gold-200' : 'bg-blue-50 border border-blue-100 text-blue-700'
               }`}>
                 <p>Hours shown reflect all approved submissions. If you recently submitted hours that aren't showing, they may still be pending review by an NHS officer.</p>
               </div>

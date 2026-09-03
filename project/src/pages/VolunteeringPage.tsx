@@ -109,11 +109,11 @@ export function VolunteeringPage() {
       food: '#16a34a',
       environment: '#15803d',
       education: '#1d4ed8',
-      health: '#dc2626',
+      health: '#0369a1',
       animals: '#d97706',
       housing: '#7c3aed',
       community: '#0891b2',
-      arts: '#db2777',
+      arts: '#475569',
     };
     return colors[category] || '#4b5563';
   };
@@ -158,14 +158,14 @@ export function VolunteeringPage() {
       {/* Filters */}
       <div className={`backdrop-blur-sm border-b py-3 px-4 sm:px-6 lg:px-8 ${
         darkMode 
-          ? 'bg-gray-900/95 border-gray-700' 
+          ? 'bg-navy-950/95 border-white/10' 
           : 'bg-white/95 border-gray-200'
       }`}>
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-nowrap items-center gap-2 overflow-x-auto scrollbar-none pb-1">
             <div className="flex items-center gap-1.5 shrink-0">
-              <Filter className={`w-4 h-4 ${darkMode ? 'text-blue-400' : 'text-blue-900'}`} />
-              <span className={`font-semibold text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Filters:</span>
+              <Filter className={`w-4 h-4 ${darkMode ? 'text-gold-300' : 'text-blue-900'}`} />
+              <span className={`font-semibold text-sm ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>Filters:</span>
             </div>
             
             {categories.map(({ id, label }) => (
@@ -176,7 +176,7 @@ export function VolunteeringPage() {
                   filterCategory === id
                     ? 'border-blue-500 text-white'
                     : darkMode
-                      ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
+                      ? 'bg-navy-900 border-white/10 text-navy-100 hover:bg-navy-800'
                       : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
                 }`}
                 style={filterCategory === id ? { backgroundColor: getCategoryColor(id), borderColor: getCategoryColor(id) } : {}}
@@ -190,8 +190,8 @@ export function VolunteeringPage() {
                 onClick={() => setFilterCategory(null)}
                 className={`text-xs flex items-center px-2 py-1.5 rounded-lg transition-colors shrink-0 ${
                   darkMode 
-                    ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                    ? 'text-navy-200/75 hover:text-gray-200 hover:bg-navy-800' 
+                    : 'text-navy-200/60 hover:text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 <X className="w-3 h-3 mr-1" />
@@ -206,7 +206,7 @@ export function VolunteeringPage() {
                 filterSponsored === true
                   ? 'bg-blue-900 border-blue-900 text-white'
                   : darkMode
-                  ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
+                  ? 'bg-navy-900 border-white/10 text-navy-100 hover:bg-navy-800'
                   : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -216,9 +216,9 @@ export function VolunteeringPage() {
               onClick={() => setFilterSponsored(filterSponsored === false ? null : false)}
               className={`px-3 py-1.5 border rounded-lg text-xs font-medium transition-all shrink-0 ${
                 filterSponsored === false
-                  ? 'bg-gray-700 border-gray-500 text-white'
+                  ? 'bg-navy-800 border-gray-500 text-white'
                   : darkMode
-                  ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
+                  ? 'bg-navy-900 border-white/10 text-navy-100 hover:bg-navy-800'
                   : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -232,7 +232,7 @@ export function VolunteeringPage() {
                 sortByDate
                   ? 'bg-emerald-600 border-emerald-600 text-white'
                   : darkMode
-                  ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
+                  ? 'bg-navy-900 border-white/10 text-navy-100 hover:bg-navy-800'
                   : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -245,9 +245,9 @@ export function VolunteeringPage() {
       </div>
 
       {/* Split View: Half Map + Half List */}
-      <div className={`px-4 sm:px-6 lg:px-8 py-6 ${darkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>
+      <div className={`px-4 sm:px-6 lg:px-8 py-6 ${darkMode ? 'bg-navy-950' : 'bg-gray-50'}`}>
         <div className="max-w-7xl mx-auto">
-          <p className={`text-sm mb-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+          <p className={`text-sm mb-4 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>
             {filteredOpportunities.length === 0
               ? 'No opportunities posted yet - coming soon!'
               : `${filteredOpportunities.length} opportunities ${sortByDate ? '(sorted by date)' : ''}`}
@@ -256,7 +256,7 @@ export function VolunteeringPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Left: Map */}
             <div className={`relative rounded-2xl overflow-hidden border ${
-              darkMode ? 'border-gray-700 bg-gray-900' : 'border-gray-200 bg-white'
+              darkMode ? 'border-white/10 bg-navy-950' : 'border-gray-200 bg-white'
             } h-[55vw] min-h-[280px] sm:h-[480px] lg:h-[calc(100vh-220px)]`}>
               {loading ? (
                 <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
@@ -309,7 +309,7 @@ export function VolunteeringPage() {
                           </div>
                           <button
                             onClick={() => setSelectedOpportunity(opportunity)}
-                            className="w-full mt-3 py-2 bg-gradient-to-r from-blue-900 to-red-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg transition-all"
+                            className="w-full mt-3 py-2 bg-gradient-to-r from-navy-800 to-gold-500 text-white text-sm font-semibold rounded-lg hover:shadow-lg transition-all"
                           >
                             View Details
                           </button>
@@ -327,7 +327,7 @@ export function VolunteeringPage() {
                   onClick={() => setMapInteractive(true)}
                 >
                   <div className={`px-5 py-3 rounded-2xl text-sm font-semibold shadow-lg backdrop-blur-sm pointer-events-none ${
-                    darkMode ? 'bg-gray-900/90 text-white border border-gray-700' : 'bg-white/90 text-gray-800 border border-gray-200'
+                    darkMode ? 'bg-navy-950/90 text-white border border-white/10' : 'bg-white/90 text-gray-800 border border-gray-200'
                   }`}>
                     Click to interact with map
                   </div>
@@ -335,14 +335,14 @@ export function VolunteeringPage() {
               )}
 
               <div className={`absolute bottom-4 left-4 p-3 rounded-xl shadow-lg z-[500] ${
-                darkMode ? 'bg-gray-900/95 border border-gray-700' : 'bg-white/95 border border-gray-200'
+                darkMode ? 'bg-navy-950/95 border border-white/10' : 'bg-white/95 border border-gray-200'
               } backdrop-blur-sm`}>
                 <h4 className={`font-bold text-xs mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Categories</h4>
                 <div className="space-y-1.5 text-xs">
                   {categories.map(({ id, label }) => (
                     <div key={id} className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: getCategoryColor(id) }} />
-                      <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{label}</span>
+                      <span className={darkMode ? 'text-navy-100' : 'text-gray-600'}>{label}</span>
                     </div>
                   ))}
                 </div>
@@ -353,13 +353,13 @@ export function VolunteeringPage() {
             <div className={`h-[55vw] min-h-[280px] sm:h-[480px] lg:h-[calc(100vh-220px)] overflow-y-auto pr-1 space-y-4`}>
               {filteredOpportunities.length === 0 && (
                 <div className={`rounded-2xl border p-8 text-center ${
-                  darkMode ? 'bg-gray-800/60 border-gray-700' : 'bg-white border-gray-200'
+                  darkMode ? 'bg-navy-900/60 border-white/10' : 'bg-white border-gray-200'
                 }`}>
-                  <Calendar className={`w-10 h-10 mx-auto mb-3 ${darkMode ? 'text-gray-600' : 'text-gray-300'}`} />
+                  <Calendar className={`w-10 h-10 mx-auto mb-3 ${darkMode ? 'text-gray-600' : 'text-navy-100'}`} />
                   <h3 className={`font-bold text-base mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                     No opportunities right now
                   </h3>
-                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <p className={`text-sm ${darkMode ? 'text-navy-200/75' : 'text-navy-200/60'}`}>
                     Coming soon - check back later!
                   </p>
                 </div>
@@ -370,7 +370,7 @@ export function VolunteeringPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className={`rounded-2xl border overflow-hidden cursor-pointer transition-all hover:shadow-lg ${
-                    darkMode ? 'bg-gray-800/60 border-gray-700 hover:border-gray-500' : 'bg-white border-gray-200 hover:border-gray-300'
+                    darkMode ? 'bg-navy-900/60 border-white/10 hover:border-gray-500' : 'bg-white border-gray-200 hover:border-gray-300'
                   }`}
                   onClick={() => setSelectedOpportunity(opp)}
                 >
@@ -388,15 +388,15 @@ export function VolunteeringPage() {
                       {opp.title}
                     </h3>
                     <div className="space-y-1">
-                      <div className={`flex items-center gap-1.5 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <div className={`flex items-center gap-1.5 text-xs ${darkMode ? 'text-navy-200/75' : 'text-navy-200/60'}`}>
                         <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
                         {new Date(opp.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · {opp.time}
                       </div>
-                      <div className={`flex items-center gap-1.5 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <div className={`flex items-center gap-1.5 text-xs ${darkMode ? 'text-navy-200/75' : 'text-navy-200/60'}`}>
                         <Clock className="w-3.5 h-3.5 flex-shrink-0" />
                         {opp.hours_estimate}
                       </div>
-                      <div className={`flex items-center gap-1.5 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <div className={`flex items-center gap-1.5 text-xs ${darkMode ? 'text-navy-200/75' : 'text-navy-200/60'}`}>
                         <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
                         <span className="truncate">{opp.location.split(',').slice(-2).join(',').trim()}</span>
                       </div>
@@ -424,7 +424,7 @@ export function VolunteeringPage() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               className={`max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl rounded-2xl ${
-                darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'
+                darkMode ? 'bg-navy-950 border border-white/10' : 'bg-white border border-gray-200'
               }`}
               onClick={(e) => e.stopPropagation()}
             >
@@ -452,7 +452,7 @@ export function VolunteeringPage() {
                       {categories.find(c => c.id === selectedOpportunity.category)?.label ?? selectedOpportunity.category}
                     </span>
                     {selectedOpportunity.is_chapter_sponsored && (
-                      <span className="px-3 py-1 text-xs font-semibold rounded-lg backdrop-blur-sm bg-blue-900/80 text-white">
+                      <span className="px-3 py-1 text-xs font-semibold rounded-lg backdrop-blur-sm bg-navy-900/80 text-white">
                         ★ Chapter Sponsored
                       </span>
                     )}
@@ -463,13 +463,13 @@ export function VolunteeringPage() {
               
               <div className="p-6 sm:p-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                  <div className={`flex items-center p-3 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-blue-50'}`}>
-                    <MapPin className={`w-5 h-5 mr-3 flex-shrink-0 ${darkMode ? 'text-blue-400' : 'text-blue-900'}`} />
-                    <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{selectedOpportunity.location}</span>
+                  <div className={`flex items-center p-3 rounded-xl ${darkMode ? 'bg-navy-900' : 'bg-blue-50'}`}>
+                    <MapPin className={`w-5 h-5 mr-3 flex-shrink-0 ${darkMode ? 'text-gold-300' : 'text-blue-900'}`} />
+                    <span className={`text-sm ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>{selectedOpportunity.location}</span>
                   </div>
-                  <div className={`flex items-center p-3 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-blue-50'}`}>
-                    <Calendar className={`w-5 h-5 mr-3 flex-shrink-0 ${darkMode ? 'text-blue-400' : 'text-blue-900'}`} />
-                    <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <div className={`flex items-center p-3 rounded-xl ${darkMode ? 'bg-navy-900' : 'bg-blue-50'}`}>
+                    <Calendar className={`w-5 h-5 mr-3 flex-shrink-0 ${darkMode ? 'text-gold-300' : 'text-blue-900'}`} />
+                    <span className={`text-sm ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>
                       {new Date(selectedOpportunity.date).toLocaleDateString('en-US', { 
                         weekday: 'long', 
                         year: 'numeric', 
@@ -478,25 +478,25 @@ export function VolunteeringPage() {
                       })}
                     </span>
                   </div>
-                  <div className={`flex items-center p-3 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-blue-50'}`}>
-                    <Clock className={`w-5 h-5 mr-3 flex-shrink-0 ${darkMode ? 'text-blue-400' : 'text-blue-900'}`} />
-                    <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{selectedOpportunity.time} ({selectedOpportunity.hours_estimate})</span>
+                  <div className={`flex items-center p-3 rounded-xl ${darkMode ? 'bg-navy-900' : 'bg-blue-50'}`}>
+                    <Clock className={`w-5 h-5 mr-3 flex-shrink-0 ${darkMode ? 'text-gold-300' : 'text-blue-900'}`} />
+                    <span className={`text-sm ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>{selectedOpportunity.time} ({selectedOpportunity.hours_estimate})</span>
                   </div>
-                  <div className={`flex items-center p-3 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-blue-50'}`}>
-                    <Users className={`w-5 h-5 mr-3 flex-shrink-0 ${darkMode ? 'text-blue-400' : 'text-blue-900'}`} />
-                    <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{selectedOpportunity.organizer}</span>
+                  <div className={`flex items-center p-3 rounded-xl ${darkMode ? 'bg-navy-900' : 'bg-blue-50'}`}>
+                    <Users className={`w-5 h-5 mr-3 flex-shrink-0 ${darkMode ? 'text-gold-300' : 'text-blue-900'}`} />
+                    <span className={`text-sm ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>{selectedOpportunity.organizer}</span>
                   </div>
                 </div>
 
                 <div className="mb-8">
                   <h3 className={`font-bold mb-3 text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>About This Opportunity</h3>
-                  <p className={`leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{selectedOpportunity.description}</p>
+                  <p className={`leading-relaxed ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>{selectedOpportunity.description}</p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4">
                   <a
                     href={`mailto:${selectedOpportunity.contact_email}?subject=Interest in ${selectedOpportunity.title}`}
-                    className="flex-1 bg-gradient-to-r from-blue-900 to-red-600 text-white py-4 px-6 rounded-xl font-bold text-center hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center"
+                    className="flex-1 bg-gradient-to-r from-navy-800 to-gold-500 text-white py-4 px-6 rounded-xl font-bold text-center hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center"
                   >
                     <ExternalLink className="w-5 h-5 mr-2" />
                     Contact Organizer
@@ -505,7 +505,7 @@ export function VolunteeringPage() {
                     onClick={() => setSelectedOpportunity(null)}
                     className={`flex-1 border-2 py-4 px-6 rounded-xl font-bold transition-colors ${
                       darkMode 
-                        ? 'border-gray-600 text-gray-300 hover:bg-gray-800' 
+                        ? 'border-white/10 text-navy-100 hover:bg-navy-900' 
                         : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                     }`}
                   >

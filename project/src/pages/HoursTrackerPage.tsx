@@ -57,20 +57,20 @@ export function HoursTrackerPage() {
   // Get grade color
   const getGradeColor = (grade: string) => {
     switch (grade.toLowerCase()) {
-      case 'freshman': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50';
-      case 'sophomore': return 'bg-blue-500/20 text-blue-400 border-blue-500/50';
-      case 'junior': return 'bg-amber-500/20 text-amber-400 border-amber-500/50';
-      case 'senior': return 'bg-red-500/20 text-red-400 border-red-500/50';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
+      case 'freshman': return 'bg-blue-400/20 text-gold-200 border-blue-400/50';
+      case 'sophomore': return 'bg-gold-400/20 text-gold-300 border-gold-400/50';
+      case 'junior': return 'bg-amber-400/20 text-amber-300 border-amber-400/50';
+      case 'senior': return 'bg-amber-600/25 text-amber-500 border-amber-600/50';
+      default: return 'bg-gray-500/20 text-navy-200/75 border-gray-500/50';
     }
   };
 
   // Get hours color based on progress (30 hours goal)
   const getHoursColor = (totalHours: number) => {
     if (totalHours >= 30) return 'text-emerald-400';
-    if (totalHours >= 20) return 'text-blue-400';
+    if (totalHours >= 20) return 'text-gold-300';
     if (totalHours >= 10) return 'text-amber-400';
-    if (totalHours >= 5) return 'text-orange-400';
+    if (totalHours >= 5) return 'text-amber-300';
     return 'text-red-400';
   };
 
@@ -81,7 +81,7 @@ export function HoursTrackerPage() {
   return (
     <div className={`min-h-screen ${
       darkMode 
-        ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950' 
+        ? 'bg-gradient-to-br from-navy-950 via-navy-950 to-navy-950' 
         : 'bg-gray-50'
     }`}>
       <motion.div
@@ -108,47 +108,47 @@ export function HoursTrackerPage() {
         >
           <div className={`p-6 rounded-2xl border ${
             darkMode 
-              ? 'bg-gray-800/50 border-gray-700/50 backdrop-blur-sm' 
+              ? 'bg-navy-900/50 border-white/10/50 backdrop-blur-sm' 
               : 'bg-white border-gray-200 shadow-sm'
           }`}>
             <div className="flex items-center justify-between mb-3">
-              <Users className={`w-8 h-8 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+              <Users className={`w-8 h-8 ${darkMode ? 'text-gold-300' : 'text-blue-600'}`} />
             </div>
             <p className={`text-3xl font-bold truncate ${darkMode ? 'text-white' : 'text-gray-800'}`}>{totalMembers}</p>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Members</p>
+            <p className={`text-sm ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>Total Members</p>
           </div>
           <div className={`p-6 rounded-2xl border ${
             darkMode 
-              ? 'bg-gray-800/50 border-gray-700/50 backdrop-blur-sm' 
+              ? 'bg-navy-900/50 border-white/10/50 backdrop-blur-sm' 
               : 'bg-white border-gray-200 shadow-sm'
           }`}>
             <div className="flex items-center justify-between mb-3">
-              <Award className={`w-8 h-8 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
+              <Award className={`w-8 h-8 ${darkMode ? 'text-gold-300' : 'text-blue-600'}`} />
             </div>
             <p className={`text-3xl font-bold truncate ${darkMode ? 'text-white' : 'text-gray-800'}`}>{inductedCount}</p>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Inducted</p>
+            <p className={`text-sm ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>Inducted</p>
           </div>
           <div className={`p-6 rounded-2xl border ${
             darkMode 
-              ? 'bg-gray-800/50 border-gray-700/50 backdrop-blur-sm' 
+              ? 'bg-navy-900/50 border-white/10/50 backdrop-blur-sm' 
               : 'bg-white border-gray-200 shadow-sm'
           }`}>
             <div className="flex items-center justify-between mb-3">
               <Star className={`w-8 h-8 ${darkMode ? 'text-amber-400' : 'text-amber-600'}`} />
             </div>
             <p className={`text-3xl font-bold truncate ${darkMode ? 'text-white' : 'text-gray-800'}`}>{totalHours}</p>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Hours</p>
+            <p className={`text-sm ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>Total Hours</p>
           </div>
           <div className={`p-6 rounded-2xl border ${
             darkMode 
-              ? 'bg-gray-800/50 border-gray-700/50 backdrop-blur-sm' 
+              ? 'bg-navy-900/50 border-white/10/50 backdrop-blur-sm' 
               : 'bg-white border-gray-200 shadow-sm'
           }`}>
             <div className="flex items-center justify-between mb-3">
-              <Trophy className={`w-8 h-8 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`} />
+              <Trophy className={`w-8 h-8 ${darkMode ? 'text-gold-300' : 'text-blue-600'}`} />
             </div>
             <p className={`text-3xl font-bold truncate ${darkMode ? 'text-white' : 'text-gray-800'}`}>{avgHours}</p>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Avg Hours</p>
+            <p className={`text-sm ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>Avg Hours</p>
           </div>
         </motion.div>
 
@@ -159,7 +159,7 @@ export function HoursTrackerPage() {
           transition={{ duration: 0.4, delay: 0.2 }}
           className={`p-4 rounded-2xl mb-6 border ${
             darkMode 
-              ? 'bg-gray-800/50 border-gray-700/50 backdrop-blur-sm' 
+              ? 'bg-navy-900/50 border-white/10/50 backdrop-blur-sm' 
               : 'bg-white border-gray-200 shadow-sm'
           }`}
         >
@@ -171,8 +171,8 @@ export function HoursTrackerPage() {
                 onChange={(e) => setFilterGrade(e.target.value)}
                 className={`min-w-[160px] pl-4 pr-12 py-3 rounded-xl border-2 transition-all appearance-none cursor-pointer ${
                   darkMode 
-                    ? 'bg-gray-900 border-gray-700 text-white focus:border-blue-500' 
-                    : 'bg-white border-blue-200 text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-sm'
+                    ? 'bg-navy-950 border-white/10 text-white focus:border-gold-400' 
+                    : 'bg-white border-blue-200 text-gray-800 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 shadow-sm'
                 }`}
               >
                 <option value="">All Grades</option>
@@ -181,7 +181,7 @@ export function HoursTrackerPage() {
                 <option value="junior">Junior</option>
                 <option value="senior">Senior</option>
               </select>
-              <div className={`absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <div className={`absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none ${darkMode ? 'text-navy-200/75' : 'text-navy-200/60'}`}>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -195,15 +195,15 @@ export function HoursTrackerPage() {
                 onChange={(e) => setFilterInducted(e.target.value)}
                 className={`min-w-[170px] pl-4 pr-12 py-3 rounded-xl border-2 transition-all appearance-none cursor-pointer ${
                   darkMode 
-                    ? 'bg-gray-900 border-gray-700 text-white focus:border-blue-500' 
-                    : 'bg-white border-blue-200 text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-sm'
+                    ? 'bg-navy-950 border-white/10 text-white focus:border-gold-400' 
+                    : 'bg-white border-blue-200 text-gray-800 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 shadow-sm'
                 }`}
               >
                 <option value="">All Status</option>
                 <option value="yes">Inducted</option>
                 <option value="no">Not Inducted</option>
               </select>
-              <div className={`absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <div className={`absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none ${darkMode ? 'text-navy-200/75' : 'text-navy-200/60'}`}>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -216,7 +216,7 @@ export function HoursTrackerPage() {
               disabled={isLoading}
               className={`shrink-0 p-3 rounded-xl transition-all ${
                 darkMode
-                  ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                  ? 'bg-navy-800 hover:bg-gray-600 text-white'
                   : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
               } ${isLoading ? 'animate-spin' : ''}`}
               title="Refresh"
@@ -234,16 +234,16 @@ export function HoursTrackerPage() {
         >
         <div className={`rounded-2xl border overflow-hidden ${
             darkMode 
-              ? 'bg-gray-800/50 border-gray-700/50 backdrop-blur-sm' 
+              ? 'bg-navy-900/50 border-white/10/50 backdrop-blur-sm' 
               : 'bg-white border-blue-100 shadow-xl shadow-blue-500/10'
           }`}
         >
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
-              <RefreshCw className={`w-8 h-8 animate-spin ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+              <RefreshCw className={`w-8 h-8 animate-spin ${darkMode ? 'text-gold-300' : 'text-blue-600'}`} />
             </div>
           ) : sortedMembers.length === 0 ? (
-            <div className={`text-center py-20 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-center py-20 ${darkMode ? 'text-navy-200/75' : 'text-navy-200/60'}`}>
               {members.length === 0 
                 ? 'No members yet. Configure Google Sheets to get started.'
                 : 'No members match your filters.'}
@@ -252,16 +252,16 @@ export function HoursTrackerPage() {
             <div className="overflow-x-auto">
               <table className="w-full table-fixed">
                 <thead>
-                  <tr className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                    <th className={`text-left p-2 sm:p-4 font-semibold w-16 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Rank</th>
-                    <th className={`text-left p-2 sm:p-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Name</th>
-                    <th className={`text-left p-2 sm:p-4 font-semibold w-28 hidden sm:table-cell ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Grade</th>
-                    <th className={`text-center p-2 sm:p-4 font-semibold whitespace-nowrap w-16 sm:w-20 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Summer</th>
-                    <th className={`text-center p-2 sm:p-4 font-semibold whitespace-nowrap w-16 sm:w-20 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Chapter</th>
-                    <th className={`text-center p-2 sm:p-4 font-semibold whitespace-nowrap w-16 sm:w-20 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Other</th>
-                    <th className={`text-center p-2 sm:p-4 font-semibold whitespace-nowrap w-16 sm:w-20 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Total</th>
-                    <th className={`text-left p-2 sm:p-4 font-semibold w-40 hidden md:table-cell ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Progress</th>
-                    <th className={`text-left p-2 sm:p-4 font-semibold w-36 hidden sm:table-cell ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Status</th>
+                  <tr className={`border-b ${darkMode ? 'border-white/10' : 'border-gray-200'}`}>
+                    <th className={`text-left p-2 sm:p-4 font-semibold w-16 ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>Rank</th>
+                    <th className={`text-left p-2 sm:p-4 font-semibold ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>Name</th>
+                    <th className={`text-left p-2 sm:p-4 font-semibold w-28 hidden sm:table-cell ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>Grade</th>
+                    <th className={`text-center p-2 sm:p-4 font-semibold whitespace-nowrap w-16 sm:w-20 ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>Summer</th>
+                    <th className={`text-center p-2 sm:p-4 font-semibold whitespace-nowrap w-16 sm:w-20 ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>Chapter</th>
+                    <th className={`text-center p-2 sm:p-4 font-semibold whitespace-nowrap w-16 sm:w-20 ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>Other</th>
+                    <th className={`text-center p-2 sm:p-4 font-semibold whitespace-nowrap w-16 sm:w-20 ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>Total</th>
+                    <th className={`text-left p-2 sm:p-4 font-semibold w-40 hidden md:table-cell ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>Progress</th>
+                    <th className={`text-left p-2 sm:p-4 font-semibold w-36 hidden sm:table-cell ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -272,7 +272,7 @@ export function HoursTrackerPage() {
                         key={member.id} 
                         className={`border-b transition-colors ${
                           darkMode 
-                            ? 'border-gray-700/50 hover:bg-gray-700/30' 
+                            ? 'border-white/10/50 hover:bg-navy-800/30' 
                             : 'border-gray-100 hover:bg-gray-50'
                         }`}
                       >
@@ -284,7 +284,7 @@ export function HoursTrackerPage() {
                             </div>
                           ) : (
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${
-                              darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'
+                              darkMode ? 'bg-navy-800 text-navy-200/75' : 'bg-gray-100 text-navy-200/60'
                             }`}>
                               {index + 1}
                             </div>
@@ -305,14 +305,14 @@ export function HoursTrackerPage() {
 
                         {/* Summer Hours */}
                         <td className="p-2 sm:p-4 text-center">
-                          <span className={`font-semibold tabular-nums ${member.summerHours >= 100 ? 'text-base' : 'text-lg'} ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                          <span className={`font-semibold tabular-nums ${member.summerHours >= 100 ? 'text-base' : 'text-lg'} ${darkMode ? 'text-gold-300' : 'text-blue-600'}`}>
                             {member.summerHours}
                           </span>
                         </td>
 
                         {/* Chapter Hours */}
                         <td className="p-2 sm:p-4 text-center">
-                          <span className={`font-semibold tabular-nums ${member.chapterHours >= 100 ? 'text-base' : 'text-lg'} ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+                          <span className={`font-semibold tabular-nums ${member.chapterHours >= 100 ? 'text-base' : 'text-lg'} ${darkMode ? 'text-gold-300' : 'text-blue-600'}`}>
                             {member.chapterHours}
                           </span>
                         </td>
@@ -335,7 +335,7 @@ export function HoursTrackerPage() {
                         <td className="p-2 sm:p-4 hidden md:table-cell">
                           <div className="w-32">
                             <div className={`h-2 rounded-full overflow-hidden ${
-                              darkMode ? 'bg-gray-700' : 'bg-gray-200'
+                              darkMode ? 'bg-navy-800' : 'bg-gray-200'
                             }`}>
                               <div 
                                 className={`h-full rounded-full transition-all duration-500 ${
@@ -347,7 +347,7 @@ export function HoursTrackerPage() {
                                 style={{ width: `${getHoursProgress(member.totalHours)}%` }}
                               />
                             </div>
-                            <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                            <p className={`text-xs mt-1 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>
                               {member.totalHours}/30 goal
                             </p>
                           </div>
@@ -362,8 +362,8 @@ export function HoursTrackerPage() {
                           ) : (
                             <span className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${
                               darkMode 
-                                ? 'bg-gray-700/50 text-gray-400 border-gray-600' 
-                                : 'bg-gray-100 text-gray-500 border-gray-200'
+                                ? 'bg-navy-800/50 text-navy-200/75 border-white/10' 
+                                : 'bg-gray-100 text-navy-200/60 border-gray-200'
                             }`}>
                               Pending
                             </span>
@@ -384,7 +384,7 @@ export function HoursTrackerPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, delay: 0.4 }}
-          className={`mt-6 text-center text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}
+          className={`mt-6 text-center text-sm ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}
         >
           Goal: 30 hours total (10 by 1st semester, 20 more by end of year) • Data synced with Google Sheets
         </motion.div>

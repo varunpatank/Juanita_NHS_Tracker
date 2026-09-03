@@ -7,15 +7,13 @@ export function FloatingLogos() {
       src: 'https://resources.finalsite.net/images/f_auto,q_auto/v1605026389/lwsdorg/azffuqvgwggxboecskaw/nhs_logo_smaller.jpg',
       alt: 'NHS Logo',
       size: 'w-32 h-32',
-      delay: 0,
-      rounded: true
+      delay: 0
     },
     {
-      src: 'https://upload.wikimedia.org/wikipedia/en/5/52/Juanita_High_School_Crest.png',
+      src: '/Raven_Head_-_Blue_Outline.png',
       alt: 'Juanita High School',
       size: 'w-32 h-32',
-      delay: 3,
-      rounded: false
+      delay: 3
     }
   ];
 
@@ -47,7 +45,7 @@ export function FloatingLogos() {
           <img 
             src={logo.src} 
             alt={logo.alt}
-            className={`w-full h-full object-contain filter drop-shadow-lg ${logo.rounded ? 'rounded-2xl' : ''}`}
+            className="w-full h-full object-contain filter drop-shadow-lg rounded-2xl"
           />
         </motion.div>
       ))}

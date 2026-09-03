@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Sun, Moon } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDarkMode } from '../lib/darkModeContext';
 
@@ -8,7 +8,7 @@ export function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
-  const { darkMode, toggleDarkMode } = useDarkMode();
+  const { darkMode } = useDarkMode();
 
   // Track scroll position
   useEffect(() => {
@@ -33,51 +33,64 @@ export function Navigation() {
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out`}
     style={{
       background: darkMode 
-        ? `linear-gradient(to right, rgba(30, 58, 138, 0.4), rgba(17, 24, 39, 0.5), rgba(127, 29, 29, 0.4))`
-        : `rgba(255, 255, 255, 0.85)`,
+        ? `rgba(7, 15, 34, 0.82)`
+        : `rgba(255, 255, 255, 0.88)`,
       backdropFilter: 'blur(12px)',
       WebkitBackdropFilter: 'blur(12px)',
-      borderBottom: darkMode 
-        ? '1px solid rgba(255, 255, 255, 0.1)'
-        : '1px solid rgba(0, 0, 0, 0.08)',
+      borderBottom: darkMode
+        ? '1px solid rgba(230, 174, 34, 0.22)'
+        : '1px solid rgba(20, 38, 80, 0.12)',
     }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center gap-4">
-            {/* Logo */}
-            <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center">
-                  <img 
-                    src="https://upload.wikimedia.org/wikipedia/en/5/52/Juanita_High_School_Crest.png"
-                    alt="Juanita High School"
-                    className="w-12 h-12 object-contain"
-                  />
-                </div>
-                <div className="hidden sm:block">
-                  <h1 className={`text-xl font-bold ${
-                    darkMode ? 'text-white' : 'text-gray-800'
-                  }`}>
-                    Juanita NHS
-                  </h1>
-                  <p className={`text-xs leading-none ${
-                    darkMode ? 'text-gray-400' : 'text-gray-500'
-                  }`}>National Honor Society</p>
-                </div>
-              </div>
+            {/* Wordmark - typographic, no logo */}
+            <Link to="/" className="group flex items-center gap-3">
+              <span
+                className="relative block h-9 w-9 shrink-0"
+                role="img"
+                aria-label="Juanita High School raven crest"
+              >
+                <span
+                  className="absolute inset-0 block"
+                  style={{
+                    WebkitMaskImage: 'url(/Raven_Head_-_Blue_Outline.png)',
+                    maskImage: 'url(/Raven_Head_-_Blue_Outline.png)',
+                    WebkitMaskSize: 'contain',
+                    maskSize: 'contain',
+                    WebkitMaskRepeat: 'no-repeat',
+                    maskRepeat: 'no-repeat',
+                    WebkitMaskPosition: 'center',
+                    maskPosition: 'center',
+                    background:
+                      'linear-gradient(160deg, #f7e6a6 0%, #e6ae22 44%, #93640a 100%)',
+                  }}
+                />
+                <img
+                  src="/Raven_Head_-_Blue_Outline.png"
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 h-full w-full object-contain"
+                  style={{
+                    filter: 'grayscale(1) contrast(1.35)',
+                    mixBlendMode: 'multiply',
+                    opacity: 0.85,
+                  }}
+                />
+              </span>
+              <span className={`font-display text-[19px] font-semibold tracking-tight ${
+                darkMode ? 'text-white' : 'text-navy-900'
+              }`}>
+                Juanita
+              </span>
+              <span className="h-4 w-px bg-gold-400/70" aria-hidden="true" />
+              <span className={`text-[11px] font-semibold uppercase tracking-eyebrow ${
+                darkMode ? 'text-gold-300' : 'text-gold-600'
+              }`}>
+                NHS
+              </span>
             </Link>
 
-            {/* Dark Mode Toggle */}
-            <button
-              onClick={toggleDarkMode}
-              className={`p-2 rounded-xl transition-all duration-200 ${
-                darkMode 
-                  ? 'bg-gray-800 text-amber-400 hover:bg-gray-700 hover:text-amber-300' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
           </div>
 
           {/* Desktop Navigation */}
@@ -122,7 +135,7 @@ export function Navigation() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className={`md:hidden border-t-4 border-red-600 transition-colors duration-200 ${
+            className={`md:hidden border-t-4 border-amber-500 transition-colors duration-200 ${
               darkMode ? 'bg-gray-900' : 'bg-white'
             }`}
           >

@@ -29,7 +29,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 px-4">
           <div className="text-center max-w-md">
-            <h1 className="text-4xl font-bold text-red-500 mb-4">Oops!</h1>
+            <h1 className="text-4xl font-bold text-amber-400 mb-4">Oops!</h1>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               Something went wrong. Please try refreshing the page.
             </p>
@@ -54,7 +54,7 @@ function NotFoundPage() {
   
   return (
     <div className={`min-h-screen flex items-center justify-center px-4 ${
-      darkMode ? 'bg-gray-900' : 'bg-gray-50'
+      darkMode ? 'bg-navy-950' : 'bg-navy-950'
     }`}>
       <div className="text-center max-w-md">
         <h1 className={`text-8xl font-bold mb-4 ${
@@ -83,7 +83,7 @@ function AppContent() {
   const { darkMode } = useDarkMode();
   
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${darkMode ? 'bg-black' : 'bg-gray-50'}`}>
+    <div className={`min-h-screen transition-colors duration-200 ${darkMode ? 'bg-navy-950' : 'bg-navy-950'}`}>
       <Navigation />
       <main className="pt-16">
         <Routes>

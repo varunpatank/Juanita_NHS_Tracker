@@ -158,7 +158,7 @@ export function AddOpportunityModal({ isOpen, onClose, onSuccess }: AddOpportuni
               <h2 className="text-2xl font-bold text-gray-800">Add New Opportunity</h2>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 p-2 rounded-xl hover:bg-gray-100 transition-colors"
+                className="text-navy-200/75 hover:text-gray-600 p-2 rounded-xl hover:bg-gray-100 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -376,7 +376,7 @@ export function AddOpportunityModal({ isOpen, onClose, onSuccess }: AddOpportuni
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 bg-gradient-to-r from-blue-900 to-red-600 text-white py-3 px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  className="flex-1 bg-gradient-to-r from-navy-800 to-gold-500 text-white py-3 px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   {isSubmitting ? 'Adding Opportunity...' : 'Add Opportunity'}
                 </button>
