@@ -28,8 +28,8 @@ const pillars = [
 
 const stats = [
   { number: '150+', label: 'Active members' },
-  { number: '2,500+', label: 'Hours served' },
-  { number: '25+', label: 'Chapter projects' },
+  { number: '2,500+', label: 'Hours served 2025-26' },
+  { number: '50+', label: 'Opportunities 2025-26' },
   { number: '95%', label: 'College bound' },
 ];
 
@@ -171,7 +171,7 @@ export function HomePage() {
               to="/hours-tracker"
               className="inline-flex items-center gap-2 border border-white/25 px-6 py-3.5 text-[13px] font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:border-gold-400 hover:text-gold-300"
             >
-              Leaderboard
+              Standings
             </Link>
           </motion.div>
 

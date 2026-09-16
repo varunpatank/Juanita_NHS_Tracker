@@ -87,7 +87,7 @@ export function Footer() {
               <li>
                 <a href="/hours-tracker" className="text-blue-200 hover:text-white transition-colors flex items-center">
                   <span className="w-2 h-2 bg-amber-400 rounded-full mr-3"></span>
-                  Leaderboard
+                  Class Standings
                 </a>
               </li>
               <li>

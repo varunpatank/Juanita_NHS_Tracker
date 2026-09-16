@@ -23,7 +23,7 @@ export function Navigation() {
     { path: '/', label: 'Home' },
     { path: '/submit-hours', label: 'Submit Hours' },
     { path: '/my-hours', label: 'My Hours' },
-    { path: '/hours-tracker', label: 'Leaderboard' },
+    { path: '/hours-tracker', label: 'Standings' },
     { path: '/volunteering', label: 'Opportunities' },
   ];
 

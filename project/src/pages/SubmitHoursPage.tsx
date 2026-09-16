@@ -298,7 +298,7 @@ const SuccessCelebration = ({
             className="px-6 py-3 rounded-xl font-semibold bg-gold-400 text-navy-950 hover:bg-gold-300 shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
           >
             <Trophy className="w-5 h-5" />
-            Leaderboard
+            Standings
           </button>
         </motion.div>
 
@@ -1041,7 +1041,7 @@ export function SubmitHoursPage() {
                         darkMode ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-700 hover:text-emerald-800'
                       }`}
                     >
-                      View Leaderboard <ArrowRight className="w-4 h-4" />
+                      View Standings <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
                 </motion.div>
@@ -1968,7 +1968,7 @@ export function SubmitHoursPage() {
                 )}
               </form>
 
-              {/* View Leaderboard + My Hours Links */}
+              {/* View Standings + My Hours Links */}
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-white/10 flex flex-wrap justify-center gap-5">
                 <button
                   onClick={() => navigate('/hours-tracker')}
@@ -1979,7 +1979,7 @@ export function SubmitHoursPage() {
                   }`}
                 >
                   <Trophy className="w-4 h-4" />
-                  Leaderboard
+                  Standings
                 </button>
                 <button
                   onClick={() => navigate('/my-hours')}
