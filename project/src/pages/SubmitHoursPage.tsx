@@ -213,7 +213,7 @@ const SuccessCelebration = ({
               }`}>
                 Your Total Hours
               </p>
-              <p className={`text-5xl font-bold ${
+              <p className={`text-4xl sm:text-5xl font-bold ${
                 yearComplete ? 'text-emerald-500' : darkMode ? 'text-white' : 'text-gray-900'
               }`}>
                 {stats.totalHours.toFixed(1)}
@@ -254,7 +254,7 @@ const SuccessCelebration = ({
             </div>
 
             {/* Hours breakdown */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 gap-2 xs:grid-cols-3">
               <div className={`p-2 rounded-lg ${darkMode ? 'bg-navy-900/30' : 'bg-blue-50'}`}>
                 <p className={`text-lg font-bold ${darkMode ? 'text-gold-300' : 'text-blue-600'}`}>
                   {stats.summerHours}
@@ -338,6 +338,9 @@ export function SubmitHoursPage() {
   const [isLoadingMembers, setIsLoadingMembers] = useState(true);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  // Named fields behind an error, so the popup can list exactly what is missing
+  const [errorFields, setErrorFields] = useState<string[]>([]);
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [submittedName, setSubmittedName] = useState('');
   const [celebrationStats, setCelebrationStats] = useState<CelebrationStats | null>(null);
@@ -522,8 +525,7 @@ export function SubmitHoursPage() {
     if (ADMIN_OVERRIDE_CODE && adminCode === ADMIN_OVERRIDE_CODE) {
       // Bypass skips the AI check, not the required details
       if (!sentenceFrameFilled) {
-        setErrorMessage('Please fill in all of the activity detail fields before submitting.');
-        setSubmitStatus('error');
+        fail('Fill in every activity detail before submitting.', missingDetailFields());
         return;
       }
       setIsVerified(true);
@@ -534,14 +536,12 @@ export function SubmitHoursPage() {
 
     // Require sentence frame fields filled
     if (!sentenceFrameFilled) {
-      setErrorMessage('Please fill in all of the activity detail fields - organization, activity, date, photo description, supervisor, and supervisor contact.');
-      setSubmitStatus('error');
+      fail('Fill in every activity detail before verifying.', missingDetailFields());
       return;
     }
 
     if (!proofImage) {
-      setErrorMessage('Please upload an image first');
-      setSubmitStatus('error');
+      fail('Upload a photo of your proof before verifying.', ['Proof of volunteering']);
       return;
     }
 
@@ -550,7 +550,14 @@ export function SubmitHoursPage() {
     setErrorMessage('');
 
     // Single Gemini call: send image + description together
-    const verification = await verifyImage(proofImage, activityDescription);
+    const verification = await verifyImage(proofImage, activityDescription, {
+      organization: sfOrganization,
+      activity: sfActivity,
+      serviceDate: sfDate,
+      photoShows: sfPhotoShows,
+      supervisor: sfSupervisor,
+      supervisorContact: sfSupervisorContact,
+    });
 
     if (!verification.isValid) {
       const reason = verification.geminiReasoning || verification.error || 'Your image and description do not match. Please try again.';
@@ -593,20 +600,17 @@ export function SubmitHoursPage() {
 
   const doSubmitForm = async (alreadyVerified = false) => {
     if (!writeEnabled) {
-      setErrorMessage('Submissions are currently disabled.');
-      setSubmitStatus('error');
+      fail('Submissions are currently disabled.');
       return;
     }
     if (!alreadyVerified && !isVerified) {
-      setErrorMessage('Please verify your proof of volunteering image before submitting');
-      setSubmitStatus('error');
+      fail('Verify your proof image before submitting.', ['Proof of volunteering']);
       return;
     }
 
     // For existing members, require selection from the list
     if (!isNewMember && !selectedMember) {
-      setErrorMessage('Please select your name from the list. If you\'re a new member, click "New Member" above.');
-      setSubmitStatus('error');
+      fail('Select your name from the list. If this is your first submission, choose "New to This Site" instead.', ['Your name']);
       return;
     }
 
@@ -616,23 +620,29 @@ export function SubmitHoursPage() {
         member => member.name.toLowerCase().trim() === formData.name.toLowerCase().trim()
       );
       if (nameExists) {
-        setErrorMessage('This name already exists in the system. Please click "Existing Member" and search for your name instead.');
-        setSubmitStatus('error');
+        fail('That name is already on record. Go back and search for it instead of adding it again.', ['Your name']);
         return;
       }
     }
     
     if (!formData.name || !formData.grade || !formData.inducted) {
-      setErrorMessage('Please fill in all required fields');
-      setSubmitStatus('error');
+      fail('Some required fields are still empty.', [
+        !formData.name && 'Your name',
+        !formData.grade && 'Grade level',
+        !formData.inducted && 'Induction status',
+      ].filter(Boolean) as string[]);
+      return;
+    }
+
+    if (totalHours <= 0) {
+      fail('Enter the hours you are adding before submitting.', ['Hours']);
       return;
     }
 
     // Max 500 hours per submission
     const submissionTotal = (parseFloat(formData.summerHours) || 0) + (parseFloat(formData.chapterHours) || 0) + (parseFloat(formData.otherHours) || 0);
     if (submissionTotal > 500) {
-      setErrorMessage('You cannot submit more than 500 hours at once. Please reduce your hours.');
-      setSubmitStatus('error');
+      fail('You cannot submit more than 500 hours at once. Please reduce your hours.', ['Hours']);
       return;
     }
 
@@ -758,6 +768,25 @@ export function SubmitHoursPage() {
     : null;
   const adding = totalHours > 0;
 
+  /** Raise a blocking, on-screen error rather than a line of text far down the page. */
+  const fail = (message: string, fields: string[] = []) => {
+    setErrorMessage(message);
+    setErrorFields(fields);
+    setSubmitStatus('error');
+    setShowErrorPopup(true);
+  };
+
+  /** Which activity detail fields are still empty. */
+  const missingDetailFields = () =>
+    [
+      !sfOrganization.trim() && 'Organization',
+      !sfActivity.trim() && 'What you did',
+      !sfDate.trim() && 'Date of service',
+      !sfPhotoShows.trim() && 'What the photo shows',
+      !sfSupervisor.trim() && 'Supervisor name',
+      !sfSupervisorContact.trim() && 'Supervisor contact',
+    ].filter(Boolean) as string[];
+
   const rules = [
     {
       icon: Clock,
@@ -806,6 +835,66 @@ export function SubmitHoursPage() {
             submittedName={submittedName}
             stats={celebrationStats}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Missing / invalid input - blocking popup so it cannot be missed */}
+      <AnimatePresence>
+        {showErrorPopup && errorMessage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-navy-950/80 p-4 backdrop-blur-sm"
+            onClick={() => setShowErrorPopup(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 18, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.98 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md overflow-hidden rounded-2xl border-t-2 border-gold-400 bg-navy-900 shadow-2xl"
+            >
+              <div className="p-6 sm:p-7">
+                <div className="flex items-start gap-4">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gold-400/15">
+                    <AlertCircle className="h-6 w-6 text-gold-300" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="font-display text-xl font-semibold text-white">
+                      {errorFields.length > 0 ? 'Missing information' : 'Cannot submit yet'}
+                    </h3>
+                    <p className="mt-1.5 text-[14.5px] leading-relaxed text-navy-100/80">
+                      {errorMessage}
+                    </p>
+                  </div>
+                </div>
+
+                {errorFields.length > 0 && (
+                  <ul className="mt-5 border-t border-white/10 pt-4">
+                    {errorFields.map((field) => (
+                      <li
+                        key={field}
+                        className="flex items-center gap-2.5 py-1.5 text-[14px] text-navy-100"
+                      >
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold-400" />
+                        {field}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowErrorPopup(false)}
+                  className="mt-6 w-full bg-gold-400 px-6 py-3.5 text-[13px] font-semibold uppercase tracking-[0.12em] text-navy-950 transition-colors hover:bg-gold-300"
+                >
+                  Go back and fix
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -1326,7 +1415,7 @@ export function SubmitHoursPage() {
 
                         {/* Headline total */}
                         <div className="mt-3 flex items-baseline gap-3">
-                          <span className={`font-display text-5xl font-semibold leading-none tabular-nums ${
+                          <span className={`font-display text-4xl sm:text-5xl font-semibold leading-none tabular-nums ${
                             darkMode ? 'text-white' : 'text-navy-900'
                           }`}>
                             {projected.total.toFixed(1)}
@@ -1479,7 +1568,7 @@ export function SubmitHoursPage() {
                 </div>
 
                 {/* Hours Grid */}
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 gap-3 xs:grid-cols-3">
                   <div>
                     <label className={`block text-sm font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>
                       Summer Hours
@@ -1758,14 +1847,14 @@ export function SubmitHoursPage() {
                         </p>
 
                         {/* Organization */}
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
                           <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>I volunteered with</span>
                           <input
                             type="text"
                             value={sfOrganization}
                             onChange={(e) => { setSfOrganization(e.target.value); setIsVerified(false); setVerificationResult(null); }}
                             placeholder="e.g. Kirkland Food Bank"
-                            className={`flex-1 min-w-[160px] px-3 py-2 rounded-lg border text-sm transition-all ${
+                            className={`w-full min-w-0 flex-1 px-3 py-2 rounded-lg border text-sm transition-all ${
                               darkMode
                                 ? 'bg-navy-900 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20'
                                 : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
@@ -1774,14 +1863,14 @@ export function SubmitHoursPage() {
                         </div>
 
                         {/* Activity */}
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
                           <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>where I</span>
                           <input
                             type="text"
                             value={sfActivity}
                             onChange={(e) => { setSfActivity(e.target.value); setIsVerified(false); setVerificationResult(null); }}
                             placeholder="e.g. sorted food donations and stocked shelves"
-                            className={`flex-1 min-w-[160px] px-3 py-2 rounded-lg border text-sm transition-all ${
+                            className={`w-full min-w-0 flex-1 px-3 py-2 rounded-lg border text-sm transition-all ${
                               darkMode
                                 ? 'bg-navy-900 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20'
                                 : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
@@ -1790,14 +1879,14 @@ export function SubmitHoursPage() {
                         </div>
 
                         {/* Date */}
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
                           <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>on</span>
                           <input
                             type="text"
                             value={sfDate}
                             onChange={(e) => { setSfDate(e.target.value); setIsVerified(false); setVerificationResult(null); }}
                             placeholder="e.g. March 15, 2026"
-                            className={`flex-1 min-w-[140px] px-3 py-2 rounded-lg border text-sm transition-all ${
+                            className={`w-full min-w-0 flex-1 px-3 py-2 rounded-lg border text-sm transition-all ${
                               darkMode
                                 ? 'bg-navy-900 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20'
                                 : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
@@ -1813,7 +1902,7 @@ export function SubmitHoursPage() {
                             value={sfPhotoShows}
                             onChange={(e) => { setSfPhotoShows(e.target.value); setIsVerified(false); setVerificationResult(null); }}
                             placeholder="e.g. me at the food bank, or an email from an organizer confirming my volunteer shift"
-                            className={`flex-1 min-w-[160px] px-3 py-2 rounded-lg border text-sm transition-all ${
+                            className={`w-full min-w-0 flex-1 px-3 py-2 rounded-lg border text-sm transition-all ${
                               darkMode
                                 ? 'bg-navy-900 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20'
                                 : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
@@ -1825,14 +1914,14 @@ export function SubmitHoursPage() {
                         </p>
 
                         {/* Supervisor Name */}
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
                           <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>Supervisor name</span>
                           <input
                             type="text"
                             value={sfSupervisor}
                             onChange={(e) => setSfSupervisor(e.target.value)}
                             placeholder="e.g. John Doe"
-                            className={`flex-1 min-w-[160px] px-3 py-2 rounded-lg border text-sm transition-all ${
+                            className={`w-full min-w-0 flex-1 px-3 py-2 rounded-lg border text-sm transition-all ${
                               darkMode
                                 ? 'bg-navy-900 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20'
                                 : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'
@@ -1841,14 +1930,14 @@ export function SubmitHoursPage() {
                         </div>
 
                         {/* Supervisor Contact */}
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
                           <span className={`text-sm font-medium whitespace-nowrap ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>Supervisor contact</span>
                           <input
                             type="text"
                             value={sfSupervisorContact}
                             onChange={(e) => setSfSupervisorContact(e.target.value)}
                             placeholder="e.g. jdoe@email.com or (425) 555-1234"
-                            className={`flex-1 min-w-[180px] px-3 py-2 rounded-lg border text-sm transition-all ${
+                            className={`w-full min-w-0 flex-1 px-3 py-2 rounded-lg border text-sm transition-all ${
                               darkMode
                                 ? 'bg-navy-900 border-white/10 text-white placeholder-navy-200/45 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20'
                                 : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/20 focus:bg-white'

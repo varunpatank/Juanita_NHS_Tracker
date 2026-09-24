@@ -196,7 +196,7 @@ export function MyHoursPage() {
                   Total Hours
                 </p>
                 <div className="flex items-end gap-2 mb-3">
-                  <span className={`text-5xl font-bold ${getHoursColor(result.totalHours)}`}>
+                  <span className={`text-4xl sm:text-5xl font-bold ${getHoursColor(result.totalHours)}`}>
                     {result.totalHours.toFixed(1)}
                   </span>
                   <span className={`text-xl font-normal mb-1 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>
@@ -278,7 +278,7 @@ export function MyHoursPage() {
                 <h3 className={`text-sm font-bold uppercase tracking-wide mb-4 ${darkMode ? 'text-navy-100' : 'text-gray-700'}`}>
                   Hours Breakdown
                 </h3>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 gap-3 xs:grid-cols-3 sm:grid-cols-3">
                   <div className={`p-3 rounded-xl text-center ${darkMode ? 'bg-navy-900/30' : 'bg-blue-50'}`}>
                     <Clock className={`w-5 h-5 mx-auto mb-1 ${darkMode ? 'text-gold-300' : 'text-blue-600'}`} />
                     <p className={`text-2xl font-bold ${darkMode ? 'text-gold-300' : 'text-blue-600'}`}>

@@ -40,11 +40,100 @@ interface VolunteerOpportunity {
   impact_level: 'High' | 'Medium' | 'Low';
   image: string;
   category: string;
+  /** upcoming = single dated event, ongoing = recurring through endDate */
+  status: 'upcoming' | 'ongoing';
+  /** Named contact for sign-ups, when the listing gives one */
+  contact_name?: string;
+  /** Last day an ongoing opportunity runs (YYYY-MM-DD) */
+  endDate?: string;
 }
 
-// No opportunities are posted right now - new ones are coming soon.
-// To add some back, fill this array with VolunteerOpportunity objects.
-const mockOpportunities: VolunteerOpportunity[] = [];
+// Chapter volunteer opportunities, taken from the NHS Canvas assignments.
+// Addresses and coordinates were confirmed against LWSD and venue listings.
+// Anything whose date has passed is filtered out automatically below.
+const mockOpportunities: VolunteerOpportunity[] = [
+  {
+    id: 'keller-pta-oct1',
+    title: 'Helen Keller Elementary PTA Meeting Childcare',
+    description:
+      'Helen Keller Elementary wants to offer childcare during its general PTA meetings this year, starting with this one. They have not been able to run it consistently before, so turnout from NHS matters - if it works, it continues for every future general meeting.',
+    location: 'Helen Keller Elementary, 13820 108th Ave NE, Kirkland, WA 98034',
+    latitude: 47.72472,
+    longitude: -122.19570,
+    date: '2026-10-01',
+    time: 'Thursday, 6:00 PM',
+    hours_estimate: '~2 hours',
+    organizer: 'Helen Keller Elementary PTA',
+    contact_name: 'Caitlin Emmons',
+    contact_email: 'president@helenkellerpta.org',
+    is_chapter_sponsored: true,
+    impact_level: 'Medium',
+    image: 'https://images.unsplash.com/photo-1587616211892-f743fcca64f9?w=800',
+    category: 'education',
+    status: 'upcoming',
+  },
+  {
+    id: 'thoreau-parent-oct2',
+    title: 'Thoreau Elementary Parent Meeting Childcare',
+    description:
+      'Thoreau needs two students to watch about three to six children from 3:45 to 4:45 PM while their parents attend a meeting at the school. A short, well-defined shift straight after the school day.',
+    location: 'Henry David Thoreau Elementary, 8224 NE 138th St, Kirkland, WA 98034',
+    latitude: 47.72507,
+    longitude: -122.23016,
+    date: '2026-10-02',
+    time: 'Friday, 3:45-4:45 PM',
+    hours_estimate: '1 hour',
+    organizer: 'Thoreau Elementary',
+    contact_name: 'Heidi Gilmore',
+    contact_email: 'hgilmore@lwsd.org',
+    is_chapter_sponsored: true,
+    impact_level: 'Medium',
+    image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800',
+    category: 'education',
+    status: 'upcoming',
+  },
+  {
+    id: 'bell-curriculum-oct8',
+    title: 'Bell Elementary Curriculum Night Childcare',
+    description:
+      'Bell hosts its annual Curriculum Night and wants NHS volunteers to run activities for children whose families need childcare to attend the classroom sessions. Four arts-and-crafts stations plus a movie option. The evening runs 5:00 to 7:30 PM.',
+    location: 'Alexander Graham Bell Elementary, 11212 NE 112th St, Kirkland, WA 98033',
+    latitude: 47.70132,
+    longitude: -122.19219,
+    date: '2026-10-08',
+    time: 'Thursday, 5:00-7:30 PM',
+    hours_estimate: '~2.5 hours',
+    organizer: 'Bell Elementary',
+    contact_name: 'Brian Story',
+    contact_email: 'bstory@lwsd.org',
+    is_chapter_sponsored: true,
+    impact_level: 'High',
+    image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800',
+    category: 'education',
+    status: 'upcoming',
+  },
+  {
+    id: 'kubana-refugee-tutoring',
+    title: 'Tutoring Program Serving Refugee Students',
+    description:
+      'Kubana runs a local tutoring program for Ugandan and Rwandan refugee students in grades 5-12, most at Cedar Park Christian and some at LWSD schools. All are English speakers. Tutors mainly help with math and social studies, plus some science and English. They want regular tutors for the whole school year and will put on a training session first.',
+    location: 'Our Redeemer Lutheran Church, 11611 NE 140th St, Kirkland, WA 98034',
+    latitude: 47.72524,
+    longitude: -122.18613,
+    date: '2026-10-01',
+    endDate: '2027-06-19',
+    time: 'Thursdays & Saturdays, 5:00-7:00 PM',
+    hours_estimate: '2 hours per session',
+    organizer: 'Kubana',
+    contact_name: 'Terri Dayton',
+    contact_email: 'tedayton@lwsd.org',
+    is_chapter_sponsored: false,
+    impact_level: 'High',
+    image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800',
+    category: 'education',
+    status: 'ongoing',
+  },
+];
 
 // Component to handle map zoom
 function MapController({ selectedOpportunity }: { selectedOpportunity: VolunteerOpportunity | null }) {
@@ -69,7 +158,6 @@ export function VolunteeringPage() {
   const [selectedOpportunity, setSelectedOpportunity] = useState<VolunteerOpportunity | null>(null);
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [filterSponsored, setFilterSponsored] = useState<boolean | null>(null);
-  const [sortByDate, setSortByDate] = useState(false);
   const [mapInteractive, setMapInteractive] = useState(false);
   const [loading] = useState(false);
 
@@ -93,16 +181,23 @@ export function VolunteeringPage() {
     { id: 'arts', label: 'Arts' },
   ];
 
-  const filteredOpportunities = opportunities
+  // An opportunity drops off the board once it is over: dated events the day
+  // after they run, ongoing ones after their end date.
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const isCurrent = (opp: VolunteerOpportunity) => {
+    const last = new Date((opp.endDate ?? opp.date) + 'T23:59:59');
+    return last.getTime() >= today.getTime();
+  };
+  const liveOpportunities = opportunities.filter(isCurrent);
+
+  const filteredOpportunities = liveOpportunities
     .filter(opp => {
       const categoryMatch = !filterCategory || opp.category === filterCategory;
       const sponsoredMatch = filterSponsored === null || opp.is_chapter_sponsored === filterSponsored;
       return categoryMatch && sponsoredMatch;
     })
-    .sort((a, b) => {
-      if (sortByDate) return new Date(a.date).getTime() - new Date(b.date).getTime();
-      return 0;
-    });
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
@@ -225,20 +320,6 @@ export function VolunteeringPage() {
               Other Hours
             </button>
 
-            {/* Sort by date */}
-            <button
-              onClick={() => setSortByDate(!sortByDate)}
-              className={`px-3 py-1.5 border rounded-lg text-xs font-medium transition-all flex items-center gap-1 shrink-0 ${
-                sortByDate
-                  ? 'bg-emerald-600 border-emerald-600 text-white'
-                  : darkMode
-                  ? 'bg-navy-900 border-white/10 text-navy-100 hover:bg-navy-800'
-                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <Calendar className="w-3 h-3" />
-              Sort by Date
-            </button>
 
           </div>
         </div>
@@ -249,8 +330,8 @@ export function VolunteeringPage() {
         <div className="max-w-7xl mx-auto">
           <p className={`text-sm mb-4 ${darkMode ? 'text-navy-200/60' : 'text-navy-200/75'}`}>
             {filteredOpportunities.length === 0
-              ? 'No opportunities posted yet - coming soon!'
-              : `${filteredOpportunities.length} opportunities ${sortByDate ? '(sorted by date)' : ''}`}
+              ? 'Nothing matches these filters right now.'
+              : `${filteredOpportunities.length} open ${filteredOpportunities.length === 1 ? 'opportunity' : 'opportunities'}`}
           </p>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -285,13 +366,22 @@ export function VolunteeringPage() {
                       icon={createCustomIcon(opportunity.category)}
                     >
                       <Popup>
-                        <div className="p-2 min-w-[280px]">
+                        <div className="p-2 w-[min(280px,70vw)]">
                           <img
                             src={opportunity.image}
                             onError={handleImageError}
                             alt={opportunity.title}
                             className="w-full h-32 object-cover rounded-lg mb-3"
                           />
+                          <div className="mb-2 flex items-center gap-2">
+                            <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded ${
+                              opportunity.status === 'ongoing'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-amber-400 text-gray-900'
+                            }`}>
+                              {opportunity.status === 'ongoing' ? 'Ongoing' : 'Upcoming'}
+                            </span>
+                          </div>
                           <h3 className="font-bold text-gray-800 mb-2 text-base">{opportunity.title}</h3>
                           <div className="space-y-1 text-sm">
                             <div className="flex items-center text-gray-600">
@@ -300,7 +390,7 @@ export function VolunteeringPage() {
                             </div>
                             <div className="flex items-center text-gray-600">
                               <Calendar className="w-3 h-3 mr-2 text-blue-900" />
-                              {new Date(opportunity.date).toLocaleDateString()}
+                              {new Date(opportunity.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                             </div>
                             <div className="flex items-center text-gray-600">
                               <Clock className="w-3 h-3 mr-2 text-blue-900" />
@@ -350,60 +440,83 @@ export function VolunteeringPage() {
             </div>
 
             {/* Right: List */}
-            <div className={`h-[55vw] min-h-[280px] sm:h-[480px] lg:h-[calc(100vh-220px)] overflow-y-auto pr-1 space-y-4`}>
+            <div className="space-y-4 overflow-visible sm:h-[480px] sm:overflow-y-auto sm:pr-1 lg:h-[calc(100vh-220px)]">
               {filteredOpportunities.length === 0 && (
                 <div className={`rounded-2xl border p-8 text-center ${
                   darkMode ? 'bg-navy-900/60 border-white/10' : 'bg-white border-gray-200'
                 }`}>
                   <Calendar className={`w-10 h-10 mx-auto mb-3 ${darkMode ? 'text-gray-600' : 'text-navy-100'}`} />
-                  <h3 className={`font-bold text-base mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    No opportunities right now
+                  <h3 className="mb-1 font-display text-base font-semibold text-white">
+                    Nothing here yet
                   </h3>
-                  <p className={`text-sm ${darkMode ? 'text-navy-200/75' : 'text-navy-200/60'}`}>
-                    Coming soon - check back later!
+                  <p className="text-sm text-navy-200/70">
+                    Clear the filters, or turn on past events to see what the
+                    chapter has already done.
                   </p>
                 </div>
               )}
-              {filteredOpportunities.map(opp => (
+              {filteredOpportunities.map(opp => {
+                const isOngoing = opp.status === 'ongoing';
+                return (
                 <motion.div
                   key={opp.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`rounded-2xl border overflow-hidden cursor-pointer transition-all hover:shadow-lg ${
-                    darkMode ? 'bg-navy-900/60 border-white/10 hover:border-gray-500' : 'bg-white border-gray-200 hover:border-gray-300'
-                  }`}
+                  className="rounded-2xl border border-white/10 bg-navy-900/60 overflow-hidden cursor-pointer transition-all hover:border-gold-400/50 hover:shadow-lg"
                   onClick={() => setSelectedOpportunity(opp)}
                 >
-                  <div className="h-36 overflow-hidden relative">
-                    <img
-                      src={opp.image}
-                      onError={handleImageError}
-                      alt={opp.title}
-                      loading="lazy"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
                   <div className="p-4">
-                    <h3 className={`font-bold text-sm mb-2 line-clamp-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {/* Status + date line */}
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <span
+                        className={`px-2 py-0.5 text-[10px] font-semibold uppercase tracking-eyebrow ${
+                          isOngoing ? 'bg-gold-400/20 text-gold-200' : 'bg-gold-400 text-navy-950'
+                        }`}
+                      >
+                        {isOngoing ? 'Ongoing' : 'Upcoming'}
+                      </span>
+                      <span className="text-xs font-medium text-navy-100">
+                        {new Date(opp.date + 'T12:00:00').toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </span>
+                    </div>
+
+                    <h3 className="font-display text-base font-semibold leading-snug text-white">
                       {opp.title}
                     </h3>
-                    <div className="space-y-1">
-                      <div className={`flex items-center gap-1.5 text-xs ${darkMode ? 'text-navy-200/75' : 'text-navy-200/60'}`}>
-                        <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-                        {new Date(opp.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · {opp.time}
+
+                    <div className="mt-2.5 space-y-1.5">
+                      <div className="flex items-start gap-1.5 text-xs text-navy-200/75">
+                        <Clock className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+                        <span>{opp.time} &middot; {opp.hours_estimate}</span>
                       </div>
-                      <div className={`flex items-center gap-1.5 text-xs ${darkMode ? 'text-navy-200/75' : 'text-navy-200/60'}`}>
-                        <Clock className="w-3.5 h-3.5 flex-shrink-0" />
-                        {opp.hours_estimate}
+                      <div className="flex items-start gap-1.5 text-xs text-navy-200/75">
+                        <MapPin className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+                        <span>{opp.location.split(',')[0]}</span>
                       </div>
-                      <div className={`flex items-center gap-1.5 text-xs ${darkMode ? 'text-navy-200/75' : 'text-navy-200/60'}`}>
-                        <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span className="truncate">{opp.location.split(',').slice(-2).join(',').trim()}</span>
-                      </div>
+                    </div>
+
+                    <p className="mt-2.5 line-clamp-2 text-xs leading-relaxed text-navy-200/60">
+                      {opp.description}
+                    </p>
+
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-gold-300">
+                        View details &rarr;
+                      </span>
+                      {opp.is_chapter_sponsored && (
+                        <span className="text-[10px] font-semibold uppercase tracking-eyebrow text-navy-200/60">
+                          Chapter sponsored
+                        </span>
+                      )}
                     </div>
                   </div>
                 </motion.div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -488,6 +601,22 @@ export function VolunteeringPage() {
                   </div>
                 </div>
 
+                <div className="mb-6 rounded-xl border border-gold-400/30 bg-gold-400/10 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-gold-300">To sign up</p>
+                  <p className="mt-1.5 text-sm text-navy-100">
+                    Email{' '}
+                    {selectedOpportunity.contact_name && (
+                      <span className="font-semibold">{selectedOpportunity.contact_name}</span>
+                    )}{' '}
+                    <a
+                      href={`mailto:${selectedOpportunity.contact_email}`}
+                      className="font-semibold text-gold-200 underline decoration-gold-400/50 underline-offset-2"
+                    >
+                      {selectedOpportunity.contact_email}
+                    </a>
+                  </p>
+                </div>
+
                 <div className="mb-8">
                   <h3 className={`font-bold mb-3 text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>About This Opportunity</h3>
                   <p className={`leading-relaxed ${darkMode ? 'text-navy-200/75' : 'text-gray-600'}`}>{selectedOpportunity.description}</p>
@@ -499,7 +628,9 @@ export function VolunteeringPage() {
                     className="flex-1 bg-gradient-to-r from-navy-800 to-gold-500 text-white py-4 px-6 rounded-xl font-bold text-center hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center"
                   >
                     <ExternalLink className="w-5 h-5 mr-2" />
-                    Contact Organizer
+                    {selectedOpportunity.contact_name
+                      ? `Email ${selectedOpportunity.contact_name} to sign up`
+                      : 'Contact organizer to sign up'}
                   </a>
                   <button
                     onClick={() => setSelectedOpportunity(null)}

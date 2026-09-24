@@ -109,3 +109,36 @@ button, a, input, select, textarea {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(128, 128, 128, 0.5);
 }
+
+/* --- Mobile hardening ------------------------------------------------- */
+
+/* Nothing should be able to scroll the page sideways on a phone. */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* iOS zooms the viewport when a focused input is under 16px. Keep form
+   controls at 16px on small screens so tapping a field does not jump. */
+@media (max-width: 640px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Long unbroken strings (emails, org names, pasted links) must wrap rather
+   than push the layout wider than the screen. */
+p, h1, h2, h3, li, dd, dt, span, a {
+  overflow-wrap: break-word;
+}
+
+/* Comfortable tap targets */
+@media (max-width: 640px) {
+  button, a[role="button"], input[type="submit"] {
+    min-height: 44px;
+  }
+}

@@ -4,6 +4,10 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      screens: {
+        // Narrow phones get a single column; 420px+ can take 3-up rows.
+        xs: '420px',
+      },
       fontFamily: {
         // Display serif for headlines, Inter for everything else.
         display: ['Fraunces', 'Georgia', 'serif'],
