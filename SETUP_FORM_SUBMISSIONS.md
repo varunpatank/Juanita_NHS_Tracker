@@ -5,7 +5,7 @@ Your NHS Hours Tracker is currently in **read-only mode**. To enable students to
 ## ✅ Step-by-Step Setup (5 minutes)
 
 ### 1. Open Google Apps Script
-1. Go to your Google Sheet: https://docs.google.com/spreadsheets/d/12xjBJY7Rg1TClIu1qSwEiIANwrXiC3wuD9iyVTKcwFI
+1. Go to your Google Sheet: https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID
 2. Click **Extensions** → **Apps Script**
 
 ### 2. Add the Script

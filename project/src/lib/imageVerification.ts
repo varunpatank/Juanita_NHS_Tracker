@@ -13,6 +13,8 @@ type VerdictJSON = {
 export interface ImageVerificationResult {
   isValid: boolean;
   error?: string;
+  /** true when the failure was a transport/parse problem, not a real rejection */
+  retryable?: boolean;
   geminiAnalysis?: string;
   geminiReasoning?: string;
   suggestions?: string[];
@@ -112,10 +114,10 @@ a sofa, which does not support sorting donations at a food bank."
 
 suggestions: if rejecting, 1-3 short, concrete fixes.
 
-Respond ONLY as JSON:
-{"imageDescription": "...", "descriptionIsCoherent": true/false,
+Respond ONLY as JSON, with the verdict keys FIRST, exactly in this order:
+{"isValid": true/false, "descriptionIsCoherent": true/false,
 "photoSupportsActivity": true/false, "photoMatchesPhotoClaim": true/false,
-"isValid": true/false, "reasoning": "...", "suggestions": []}`;
+"reasoning": "...", "imageDescription": "...", "suggestions": []}`;
 }
 
 
@@ -182,7 +184,10 @@ Respond ONLY as JSON:
           ],
           generationConfig: {
             temperature: 0,
-            maxOutputTokens: 2048,
+            // gemini-2.5-flash spends part of the budget on hidden reasoning
+            // tokens; without headroom the JSON gets cut off mid-object.
+            maxOutputTokens: 4096,
+            thinkingConfig: { thinkingBudget: 512 },
             responseMimeType: 'application/json',
           },
         }),
@@ -248,7 +253,10 @@ export async function verifyImage(
           ],
           generationConfig: {
             temperature: 0,
-            maxOutputTokens: 2048,
+            // gemini-2.5-flash spends part of the budget on hidden reasoning
+            // tokens; without headroom the JSON gets cut off mid-object.
+            maxOutputTokens: 4096,
+            thinkingConfig: { thinkingBudget: 512 },
             responseMimeType: 'application/json',
           }
         }),
@@ -263,10 +271,19 @@ export async function verifyImage(
     }
 
     const data = await response.json();
-    const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const candidate = data.candidates?.[0];
+    const finishReason = candidate?.finishReason;
+    const textResponse = candidate?.content?.parts?.[0]?.text;
 
     if (!textResponse) {
-      return { isValid: false, error: 'No response from Gemini. Please try again.' };
+      console.error('Gemini returned no text.', { finishReason, usage: data.usageMetadata });
+      return {
+        isValid: false,
+        error:
+          finishReason === 'SAFETY'
+            ? 'That image was blocked by the safety filter. Try a different photo of your proof.'
+            : 'The verifier did not respond. Please try again in a moment.',
+      };
     }
 
     // Extract JSON from response — handle prefixed text, markdown fences, and truncation
@@ -275,10 +292,17 @@ export async function verifyImage(
     if (extracted) {
       result = extracted;
     } else {
-      console.warn('Could not extract JSON from Gemini response:', textResponse.substring(0, 300));
+      console.warn('Could not parse verification response.', {
+        finishReason,
+        head: textResponse.substring(0, 300),
+      });
       return {
         isValid: false,
-        error: 'Unable to process the verification response. Please try again.',
+        error:
+          finishReason === 'MAX_TOKENS'
+            ? 'The verifier ran out of room before finishing. Please press Verify again.'
+            : 'The verifier sent back something unreadable. Please press Verify again - this usually works on a second try.',
+        retryable: true,
       };
     }
 
@@ -363,6 +387,27 @@ function extractJSON(raw: string): VerdictJSON | null {
   // 2. Regex extraction for truncated/malformed JSON
   const validMatch = raw.match(/"isValid"\s*:\s*(true|false)/);
   const reasonMatch = raw.match(/"reasoning"\s*:\s*"((?:[^"\\]|\\.)*)/);
+
+  // Truncated before "isValid" but after the sub-checks: the sub-checks are
+  // the grounded answers, so a verdict can still be derived from them.
+  if (!validMatch) {
+    const sub = (key: string) =>
+      raw.match(new RegExp('"' + key + '"\\s*:\\s*(true|false)'))?.[1];
+    const coherent = sub('descriptionIsCoherent');
+    const supports = sub('photoSupportsActivity');
+    const matches = sub('photoMatchesPhotoClaim');
+    if (coherent || supports || matches) {
+      return {
+        isValid: coherent === 'true' && supports === 'true' && matches === 'true',
+        reasoning: reasonMatch ? reasonMatch[1] : 'Verified from partial response.',
+        descriptionIsCoherent: coherent === 'true',
+        photoSupportsActivity: supports === 'true',
+        photoMatchesPhotoClaim: matches === 'true',
+        suggestions: [],
+      };
+    }
+  }
+
   if (validMatch) {
     const approved = validMatch[1] === 'true';
     const sub = (key: string) =>
@@ -396,9 +441,13 @@ function fileToBase64(file: File): Promise<string> {
  * Validate image file before upload
  */
 export function validateImageFile(file: File): { valid: boolean; error?: string } {
-  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  // HEIC/HEIF is what iPhones produce by default and Gemini accepts it.
+  const validTypes = [
+    'image/jpeg', 'image/jpg', 'image/png', 'image/webp',
+    'image/heic', 'image/heif',
+  ];
   if (!validTypes.includes(file.type)) {
-    return { valid: false, error: 'Please upload a valid image file (JPG, PNG, or WebP)' };
+    return { valid: false, error: 'Please upload a photo (JPG, PNG, WebP, or HEIC)' };
   }
 
   const maxSize = 5 * 1024 * 1024;
