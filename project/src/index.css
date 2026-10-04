@@ -142,3 +142,35 @@ p, h1, h2, h3, li, dd, dt, span, a {
     min-height: 44px;
   }
 }
+
+/* --- Map zoom controls ------------------------------------------------ */
+
+/* Leaflet's defaults are ~26px, too small to hit reliably on a phone. */
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
+  margin: 0 14px 16px 0 !important;
+}
+
+.leaflet-control-zoom a {
+  width: 42px !important;
+  height: 42px !important;
+  line-height: 42px !important;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  color: #0e1c3c !important;
+  background: #ffffff !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(14, 28, 60, 0.12) !important;
+}
+
+.leaflet-control-zoom a:first-child { border-radius: 10px 10px 0 0 !important; }
+.leaflet-control-zoom a:last-child  { border-radius: 0 0 10px 10px !important; border-bottom: none !important; }
+
+.leaflet-control-zoom a:hover {
+  background: #fdf8e7 !important;
+  color: #7a530c !important;
+}
+
+/* Leaflet popups sit on a light card; keep them readable on the dark site. */
+.leaflet-popup-content { margin: 10px 12px !important; }

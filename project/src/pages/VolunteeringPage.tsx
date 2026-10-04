@@ -1,5 +1,5 @@
 import { useState, useEffect, type SyntheticEvent } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl } from 'react-leaflet';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MapPin, 
@@ -7,6 +7,7 @@ import {
   Clock,
   Users, 
   ExternalLink,
+  Star,
   Filter,
   X,
 } from 'lucide-react';
@@ -44,6 +45,8 @@ interface VolunteerOpportunity {
   status: 'upcoming' | 'ongoing';
   /** Named contact for sign-ups, when the listing gives one */
   contact_name?: string;
+  /** External sign-up sheet, when the organiser uses one instead of email */
+  signup_url?: string;
   /** Last day an ongoing opportunity runs (YYYY-MM-DD) */
   endDate?: string;
 }
@@ -133,6 +136,27 @@ const mockOpportunities: VolunteerOpportunity[] = [
     category: 'education',
     status: 'ongoing',
   },
+  {
+    id: 'deca-unified-5k-oct17',
+    title: 'Juanita Unified 5K - Concession Stands',
+    description:
+      'JHS DECA runs the Juanita Unified 5K and needs volunteers on the concession stands at the football stadium through the morning of the race. Sign-ups go through SignUpGenius rather than email.',
+    location: 'Juanita High School football stadium, 10601 NE 132nd St, Kirkland, WA 98034',
+    latitude: 47.71490,
+    longitude: -122.19979,
+    date: '2026-10-17',
+    time: 'Saturday, 8:00-11:30 AM',
+    hours_estimate: '3.5 hours',
+    organizer: 'Juanita High School DECA',
+    contact_email: '1060801@lwsd.org',
+    signup_url:
+      'https://www.signupgenius.com/go/20F0D45AFAD2BA5F5C52-66337066-jhsdeca',
+    is_chapter_sponsored: false,
+    impact_level: 'High',
+    image: 'https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?w=800',
+    category: 'community',
+    status: 'upcoming',
+  },
 ];
 
 // Component to handle map zoom
@@ -213,23 +237,30 @@ export function VolunteeringPage() {
     return colors[category] || '#4b5563';
   };
 
-  const createCustomIcon = (category: string) => {
+  const createCustomIcon = (category: string, sponsored = false) => {
     const color = getCategoryColor(category);
-    
+
+    // Chapter-sponsored pins are larger, gold-ringed and starred, so they read
+    // as chapter events at a glance rather than needing the legend.
+    const size = sponsored ? 36 : 26;
+    const ring = sponsored ? '#e6ae22' : '#ffffff';
+    const star = sponsored
+      ? '<div style="position:absolute;inset:0;display:flex;align-items:center;' +
+        'justify-content:center;color:#fff;font-size:15px;line-height:1;' +
+        'font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.45)">&#9733;</div>'
+      : '';
+
     return new L.DivIcon({
-      html: `
-        <div style="
-          background: ${color};
-          width: 28px;
-          height: 28px;
-          border-radius: 50% 50% 50% 0;
-          transform: rotate(-45deg);
-          border: 3px solid white;
-          box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-        "></div>
-      `,
-      iconSize: [28, 28],
-      iconAnchor: [14, 28],
+      html:
+        '<div style="position:relative;width:' + size + 'px;height:' + size + 'px">' +
+          '<div style="background:' + color + ';width:' + size + 'px;height:' + size +
+          'px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:' +
+          (sponsored ? 4 : 3) + 'px solid ' + ring + ';box-shadow:0 3px 12px rgba(0,0,0,' +
+          (sponsored ? '.45' : '.3') + ')"></div>' +
+          star +
+        '</div>',
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size],
       className: 'custom-marker'
     });
   };
@@ -338,7 +369,7 @@ export function VolunteeringPage() {
             {/* Left: Map */}
             <div className={`relative rounded-2xl overflow-hidden border ${
               darkMode ? 'border-white/10 bg-navy-950' : 'border-gray-200 bg-white'
-            } h-[55vw] min-h-[280px] sm:h-[480px] lg:h-[calc(100vh-220px)]`}>
+            } h-[68vw] min-h-[340px] sm:h-[480px] lg:h-[calc(100vh-220px)]`}>
               {loading ? (
                 <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
                   <div className="text-center">
@@ -348,11 +379,21 @@ export function VolunteeringPage() {
                 </div>
               ) : (
                 <MapContainer
-                  center={[47.7211, -122.2054]}
-                  zoom={11}
+                  center={[47.7150, -122.1980]}
+                  zoom={13}
+                  minZoom={9}
+                  maxZoom={18}
+                  zoomSnap={0.5}
+                  zoomDelta={0.5}
+                  wheelPxPerZoomLevel={90}
+                  doubleClickZoom
+                  touchZoom
+                  zoomControl={false}
                   className="h-full w-full"
                   scrollWheelZoom={mapInteractive}
                 >
+                  {/* Large, thumb-friendly zoom buttons (styled in index.css) */}
+                  <ZoomControl position="bottomright" />
                   <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -363,7 +404,7 @@ export function VolunteeringPage() {
                     <Marker
                       key={opportunity.id}
                       position={[opportunity.latitude, opportunity.longitude]}
-                      icon={createCustomIcon(opportunity.category)}
+                      icon={createCustomIcon(opportunity.category, opportunity.is_chapter_sponsored)}
                     >
                       <Popup>
                         <div className="p-2 w-[min(280px,70vw)]">
@@ -381,6 +422,11 @@ export function VolunteeringPage() {
                             }`}>
                               {opportunity.status === 'ongoing' ? 'Ongoing' : 'Upcoming'}
                             </span>
+                            {opportunity.is_chapter_sponsored && (
+                              <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-amber-500 text-white">
+                                &#9733; Chapter
+                              </span>
+                            )}
                           </div>
                           <h3 className="font-bold text-gray-800 mb-2 text-base">{opportunity.title}</h3>
                           <div className="space-y-1 text-sm">
@@ -415,19 +461,24 @@ export function VolunteeringPage() {
                   className="absolute inset-0 z-[400] flex items-center justify-center cursor-pointer"
                   style={{ background: 'rgba(0,0,0,0.18)' }}
                   onClick={() => setMapInteractive(true)}
+                  onTouchStart={() => setMapInteractive(true)}
                 >
                   <div className={`px-5 py-3 rounded-2xl text-sm font-semibold shadow-lg backdrop-blur-sm pointer-events-none ${
                     darkMode ? 'bg-navy-950/90 text-white border border-white/10' : 'bg-white/90 text-gray-800 border border-gray-200'
                   }`}>
-                    Click to interact with map
+                    Tap to zoom and pan
                   </div>
                 </div>
               )}
 
-              <div className={`absolute bottom-4 left-4 p-3 rounded-xl shadow-lg z-[500] ${
-                darkMode ? 'bg-navy-950/95 border border-white/10' : 'bg-white/95 border border-gray-200'
-              } backdrop-blur-sm`}>
-                <h4 className={`font-bold text-xs mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>Categories</h4>
+              <div className="absolute bottom-3 left-3 z-[500] max-w-[45%] rounded-xl border border-white/10 bg-navy-950/95 p-2.5 shadow-lg backdrop-blur-sm sm:bottom-4 sm:left-4 sm:p-3">
+                <div className="mb-2 flex items-center gap-1.5 border-b border-white/10 pb-2">
+                  <span className="text-[11px] leading-none text-gold-300">&#9733;</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-eyebrow text-gold-200">
+                    Chapter sponsored
+                  </span>
+                </div>
+                <h4 className="mb-2 text-[10px] font-semibold uppercase tracking-eyebrow text-white">Categories</h4>
                 <div className="space-y-1.5 text-xs">
                   {categories.map(({ id, label }) => (
                     <div key={id} className="flex items-center gap-2">
@@ -462,7 +513,11 @@ export function VolunteeringPage() {
                   key={opp.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="rounded-2xl border border-white/10 bg-navy-900/60 overflow-hidden cursor-pointer transition-all hover:border-gold-400/50 hover:shadow-lg"
+                  className={`overflow-hidden rounded-2xl border bg-navy-900/60 cursor-pointer transition-all hover:shadow-lg ${
+                    opp.is_chapter_sponsored
+                      ? 'border-gold-400/55 ring-1 ring-gold-400/20 hover:border-gold-400'
+                      : 'border-white/10 hover:border-gold-400/50'
+                  }`}
                   onClick={() => setSelectedOpportunity(opp)}
                 >
                   <div className="p-4">
@@ -475,6 +530,12 @@ export function VolunteeringPage() {
                       >
                         {isOngoing ? 'Ongoing' : 'Upcoming'}
                       </span>
+                      {opp.is_chapter_sponsored && (
+                        <span className="inline-flex items-center gap-1 border border-gold-400/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-eyebrow text-gold-200">
+                          <Star className="h-3 w-3 fill-gold-300 text-gold-300" />
+                          Chapter
+                        </span>
+                      )}
                       <span className="text-xs font-medium text-navy-100">
                         {new Date(opp.date + 'T12:00:00').toLocaleDateString('en-US', {
                           weekday: 'short',
@@ -507,11 +568,7 @@ export function VolunteeringPage() {
                       <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-gold-300">
                         View details &rarr;
                       </span>
-                      {opp.is_chapter_sponsored && (
-                        <span className="text-[10px] font-semibold uppercase tracking-eyebrow text-navy-200/60">
-                          Chapter sponsored
-                        </span>
-                      )}
+
                     </div>
                   </div>
                 </motion.div>
@@ -603,18 +660,32 @@ export function VolunteeringPage() {
 
                 <div className="mb-6 rounded-xl border border-gold-400/30 bg-gold-400/10 p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-gold-300">To sign up</p>
-                  <p className="mt-1.5 text-sm text-navy-100">
-                    Email{' '}
-                    {selectedOpportunity.contact_name && (
-                      <span className="font-semibold">{selectedOpportunity.contact_name}</span>
-                    )}{' '}
-                    <a
-                      href={`mailto:${selectedOpportunity.contact_email}`}
-                      className="font-semibold text-gold-200 underline decoration-gold-400/50 underline-offset-2"
-                    >
-                      {selectedOpportunity.contact_email}
-                    </a>
-                  </p>
+                  {selectedOpportunity.signup_url ? (
+                    <p className="mt-1.5 break-words text-sm text-navy-100">
+                      Sign up on{' '}
+                      <a
+                        href={selectedOpportunity.signup_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-gold-200 underline decoration-gold-400/50 underline-offset-2"
+                      >
+                        SignUpGenius
+                      </a>
+                    </p>
+                  ) : (
+                    <p className="mt-1.5 break-words text-sm text-navy-100">
+                      Email{' '}
+                      {selectedOpportunity.contact_name && (
+                        <span className="font-semibold">{selectedOpportunity.contact_name}</span>
+                      )}{' '}
+                      <a
+                        href={`mailto:${selectedOpportunity.contact_email}`}
+                        className="font-semibold text-gold-200 underline decoration-gold-400/50 underline-offset-2"
+                      >
+                        {selectedOpportunity.contact_email}
+                      </a>
+                    </p>
+                  )}
                 </div>
 
                 <div className="mb-8">
@@ -624,11 +695,18 @@ export function VolunteeringPage() {
 
                 <div className="flex flex-col sm:flex-row gap-4">
                   <a
-                    href={`mailto:${selectedOpportunity.contact_email}?subject=Interest in ${selectedOpportunity.title}`}
+                    href={
+                      selectedOpportunity.signup_url ??
+                      `mailto:${selectedOpportunity.contact_email}?subject=Interest in ${selectedOpportunity.title}`
+                    }
+                    target={selectedOpportunity.signup_url ? '_blank' : undefined}
+                    rel={selectedOpportunity.signup_url ? 'noopener noreferrer' : undefined}
                     className="flex-1 bg-gradient-to-r from-navy-800 to-gold-500 text-white py-4 px-6 rounded-xl font-bold text-center hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center"
                   >
                     <ExternalLink className="w-5 h-5 mr-2" />
-                    {selectedOpportunity.contact_name
+                    {selectedOpportunity.signup_url
+                      ? 'Open the sign-up sheet'
+                      : selectedOpportunity.contact_name
                       ? `Email ${selectedOpportunity.contact_name} to sign up`
                       : 'Contact organizer to sign up'}
                   </a>

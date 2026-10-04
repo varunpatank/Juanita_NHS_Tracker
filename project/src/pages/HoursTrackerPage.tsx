@@ -9,6 +9,14 @@ const ease = [0.22, 1, 0.36, 1] as const;
 /** The four classes, in school order. The race is run between these. */
 const GRADES = ['Freshman', 'Sophomore', 'Junior', 'Senior'] as const;
 
+/** Freshman pluralises irregularly; the rest just take an s. */
+const PLURAL: Record<string, string> = {
+  Freshman: 'Freshmen',
+  Sophomore: 'Sophomores',
+  Junior: 'Juniors',
+  Senior: 'Seniors',
+};
+
 /** Hours are logged in halves - show the .5 but never a trailing .0 */
 const hrs = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 
@@ -155,7 +163,7 @@ export function HoursTrackerPage() {
                             isLeader ? 'text-gold-200' : 'text-white'
                           }`}
                         >
-                          {standing.grade}s
+                          {PLURAL[standing.grade] ?? standing.grade}
                           {isLeader && (
                             <span className="ml-3 align-middle text-[10px] font-semibold uppercase tracking-eyebrow text-gold-300">
                               Leading
